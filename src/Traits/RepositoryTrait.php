@@ -14,7 +14,7 @@ trait RepositoryTrait
             File::makeDirectory($interfaceDirectory, 0755, true);
         }
 
-        $stub = file_get_contents(base_path('vendor/lyre/src/stubs/repository-interface.stub'));
+        $stub = file_get_contents(base_path('vendor/lyre/lyre/src/stubs/repository-interface.stub'));
         if (config('app.lyre')) {
             $stub = file_get_contents(base_path('packages/lyre/src/stubs/repository-interface.stub'));
         }
@@ -32,7 +32,7 @@ trait RepositoryTrait
             File::makeDirectory($repositoryDirectory, 0755, true);
         }
 
-        $stub = file_get_contents(base_path('vendor/lyre/src/stubs/repository.stub'));
+        $stub = file_get_contents(base_path('vendor/lyre/lyre/src/stubs/repository.stub'));
         if (config('app.lyre')) {
             $stub = file_get_contents(base_path('packages/lyre/src/stubs/repository.stub'));
         }

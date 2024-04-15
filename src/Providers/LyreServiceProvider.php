@@ -36,9 +36,9 @@ class LyreServiceProvider extends ServiceProvider
                 base_path('packages/lyre/src/config/response-codes.php'), 'response-codes'
             );
         } else {
-            require_once base_path('vendor/lyre/src/helpers/helpers.php');
+            require_once base_path('vendor/lyre/lyre/src/helpers/helpers.php');
             $this->mergeConfigFrom(
-                base_path('vendor/lyre/src/config/response-codes.php'), 'response-codes'
+                base_path('vendor/lyre/lyre/src/config/response-codes.php'), 'response-codes'
             );
         }
     }
