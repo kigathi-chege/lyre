@@ -1,0 +1,10 @@
+<?php
+
+namespace App\Repositories\Interface;
+
+use Kigathi\Lyre\Interface\RepositoryInterface;
+
+interface {{repositoryName}}RepositoryInterface extends RepositoryInterface
+{
+    // Define interface methods here
+}

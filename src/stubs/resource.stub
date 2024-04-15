@@ -1,0 +1,14 @@
+<?php
+
+namespace {{ namespace }};
+
+use Kigathi\Lyre\Resource;
+use App\Models\{{ class }} as {{ class }}Model;
+
+class {{ class }} extends Resource
+{
+    public function __construct({{ class }}Model $model)
+    {
+        parent::__construct($model);
+    }
+}

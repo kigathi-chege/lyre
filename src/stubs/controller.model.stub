@@ -1,0 +1,18 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ namespacedModel }};
+use Kigathi\Lyre\Controller;
+use App\Repositories\Interface\{{ model }}RepositoryInterface;
+
+class {{ class }} extends Controller
+{
+    public function __construct(
+        {{ model }}RepositoryInterface $modelRepository
+    ) {
+        $model = new {{ model }}();
+        $modelConfig = $model->generateConfig();
+        parent::__construct($modelConfig, $modelRepository);
+    }
+}

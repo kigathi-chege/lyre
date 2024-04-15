@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Repositories;
+
+use Kigathi\Lyre\Repository;
+use App\Models\{{repositoryName}};
+use App\Repositories\Interface\{{repositoryName}}RepositoryInterface;
+
+class {{repositoryName}}Repository extends Repository implements {{repositoryName}}RepositoryInterface
+{
+    protected $model;
+
+    public function __construct({{repositoryName}} $model)
+    {
+        parent::__construct($model);
+    }
+}
