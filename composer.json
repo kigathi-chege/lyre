@@ -6,7 +6,7 @@
       "src/helpers/helpers.php"
     ],
     "psr-4": {
-      "Kigathi\\Lyre\\": "src/"
+      "Lyre\\": "src/"
     }
   },
   "authors": [
