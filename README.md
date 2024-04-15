@@ -22,18 +22,24 @@ Lyre is accessible, powerful, and it is your next favorite tool.
 
 ## Get started right away
 
-`composer require lyre/lyre`
+```bash
+composer require lyre/lyre
+```
 
 - Add `LyreServiceProvider` to your providers array under `bootstrap` > `providers.php`
 - Clear configuration cache
 
-`php artisan make:all Post`
+```bash
+php artisan make:all Post
+```
 
 - Add your columns to your migration and migrate
 
 - Add your model to your routes file
 
-`Route::apiResource('posts', PostController::class);`
+```php
+Route::apiResource('posts', PostController::class);
+```
 
 - Consume your API!
 
@@ -53,25 +59,33 @@ Lyre is accessible, powerful, and it is your next favorite tool.
 
 - Easily return data filtered by a specific column
 
-`$data = $this->postRepository->columnFilters(['status' => 'active'])->all();`
+```php
+$data = $this->postRepository->columnFilters(['status' => 'active'])->all();
+```
 
 #### Range Filters
 
 - Easily filter your data by range, for example, created_at!
 
-`$data = $this->postRepository->rangeFilters(['created' => [now()->subHours(24), now()])->all();`
+```php
+$data = $this->postRepository->rangeFilters(['created' => [now()->subHours(24), now()])->all();
+```
 
 #### Relation Filters
 
 - You can even return your data filtered by specific relationships!
 
-`$data = $this->postRepository->relationFilters('author' => 'id,1')->all();`
+```php
+$data = $this->postRepository->relationFilters('author' => 'id,1')->all();
+```
 
 #### Search Query
 
 - Search through your repository!
 
-`$data = $this->postRepository->searchQuery(['search' => 'lyre'])->all();`
+```php
+$data = $this->postRepository->searchQuery(['search' => 'lyre'])->all();
+```
 
 ### Method Chaining
 
