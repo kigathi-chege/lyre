@@ -37,7 +37,7 @@ Lyre is accessible, powerful, and it is your next favorite tool.
 
 - Consume your API!
 
-- And finito.
+- Guess what? That's it.
 
 ## Dependencies
 
