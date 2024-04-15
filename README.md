@@ -77,11 +77,13 @@ Lyre is accessible, powerful, and it is your next favorite tool.
 
 - What is more? You can chain all these methods to fine tune your query!
 
-`$data = $this->postRepository->columnFilters(['status' => 'active'])
+```php
+$data = $this->postRepository->columnFilters(['status' => 'active'])
        ->rangeFilters(['created' => [now()->subHours(24), now()])
        ->relationFilters('author' => 'id,1')
        ->searchQuery(['search' => 'lyre'])
-       ->all()`
+       ->all()
+```
 
 ## License
 
