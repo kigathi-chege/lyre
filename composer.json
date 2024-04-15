@@ -1,5 +1,5 @@
 {
-  "name": "kigathi/lyre",
+  "name": "lyre/lyre",
   "description": "One minute CRUD with a simple command to create all resources",
   "autoload": {
     "files": [
