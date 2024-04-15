@@ -1,4 +1,4 @@
-<p align="center"><img src="https://en.wiktionary.org/wiki/lyre#/media/File:Lyre_(PSF).png" width="400" alt="Laravel Logo"></p>
+<p align="center"><img src="https://en.wiktionary.org/wiki/lyre#/media/File:Lyre_(PSF).png" width="400" alt="Lyre"></p>
 
 <p align="center">
 <!-- <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
@@ -24,7 +24,7 @@ Lyre is accessible, powerful, and it is your next favorite tool.
 
 `composer require lyre/lyre`
 
-- Add `LyreServiceProvider` to your providers array under bootstrap > providers.php
+- Add `LyreServiceProvider` to your providers array under `bootstrap` > `providers.php`
 - Clear configuration cache
 
 `php artisan make:all Post`
@@ -44,6 +44,44 @@ Lyre is accessible, powerful, and it is your next favorite tool.
 - **[PHP 8.2](https://www.php.net/releases/8.2/en.php)**
 - **[Spatie Activity Log](https://spatie.be/docs/laravel-activitylog/v4/introduction)**
 - **[Spatie Laravel Permission](https://spatie.be/docs/laravel-permission/v6/introduction)**
+
+## Digging Deeper
+
+### Filters
+
+#### Column Filters
+
+- Easily return data filtered by a specific column
+
+`$data = $this->postRepository->columnFilters(['status' => 'active'])->all();`
+
+#### Range Filters
+
+- Easily filter your data by range, for example, created_at!
+
+`$data = $this->postRepository->rangeFilters(['created' => [now()->subHours(24), now()])->all();`
+
+#### Relation Filters
+
+- You can even return your data filtered by specific relationships!
+
+`$data = $this->postRepository->relationFilters('author' => 'id,1')->all();`
+
+#### Search Query
+
+- Search through your repository!
+
+`$data = $this->postRepository->searchQuery(['search' => 'lyre'])->all();`
+
+### Method Chaining
+
+- What is more? You can chain all these methods to fine tune your query!
+
+`$data = $this->postRepository->columnFilters(['status' => 'active'])`
+`       ->rangeFilters(['created' => [now()->subHours(24), now()])`
+`       ->relationFilters('author' => 'id,1')`
+`       ->searchQuery(['search' => 'lyre'])`
+`       ->all()`
 
 ## License
 
