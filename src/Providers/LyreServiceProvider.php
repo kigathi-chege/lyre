@@ -8,6 +8,7 @@ use Kigathi\Lyre\Console\Commands\MakeAllCommand;
 use Kigathi\Lyre\Console\Commands\MakeRepositoryCommand;
 use Kigathi\Lyre\Console\Commands\PublishStubsCommand;
 use Kigathi\Lyre\Facades\Lyre;
+use Kigathi\Lyre\Observer;
 use Kigathi\Lyre\Services\ModelService;
 
 class LyreServiceProvider extends ServiceProvider
@@ -22,6 +23,8 @@ class LyreServiceProvider extends ServiceProvider
         });
 
         $this->registerRepositories($this->app);
+
+        $this->registerGlobalObserver();
 
         $this->commands(MakeAllCommand::class);
         $this->commands(MakeRepositoryCommand::class);
@@ -60,6 +63,18 @@ class LyreServiceProvider extends ServiceProvider
                     return $app->make($implementation);
                 });
             }
+        }
+    }
+
+    private static function registerGlobalObserver()
+    {
+        /** @var \Illuminate\Database\Eloquent\Model[] $MODELS */
+        $MODELS = collect(get_model_classes());
+
+        // TODO: Kigathi - April 15 2024 - Let your service provider offer a way to exempt all or some models from the global observer
+
+        foreach ($MODELS as $MODEL) {
+            $MODEL::observe(Observer::class);
         }
     }
 }
