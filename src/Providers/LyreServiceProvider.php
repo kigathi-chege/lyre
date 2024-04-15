@@ -30,13 +30,18 @@ class LyreServiceProvider extends ServiceProvider
         $this->commands(MakeRepositoryCommand::class);
         $this->commands(PublishStubsCommand::class);
 
-        // require_once base_path('vendor/kigathi/lyre/helpers/helpers.php');
-        require_once base_path('packages/kigathi/lyre/src/helpers/helpers.php');
 
-        $this->mergeConfigFrom(
-            // base_path('vendor/kigathi/lyre/src/response-codes.php'), 'response-codes'
-            base_path('packages/kigathi/lyre/src/config/response-codes.php'), 'response-codes'
-        );
+        if (env('202404150606')) {
+            require_once base_path('packages/kigathi/lyre/src/helpers/helpers.php');
+            $this->mergeConfigFrom(
+                base_path('packages/kigathi/lyre/src/config/response-codes.php'), 'response-codes'
+            );
+        } else {
+            require_once base_path('vendor/kigathi/lyre/helpers/helpers.php');
+            $this->mergeConfigFrom(
+                base_path('vendor/kigathi/lyre/config/response-codes.php'), 'response-codes'
+            );
+        }
     }
 
     public function boot(): void

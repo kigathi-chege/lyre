@@ -13,8 +13,12 @@ trait RepositoryTrait
         if (!File::exists($interfaceDirectory)) {
             File::makeDirectory($interfaceDirectory, 0755, true);
         }
-        // $stub = file_get_contents(base_path('vendor/kigathi/lyre/stubs/repository-interface.stub'));
-        $stub = file_get_contents(base_path('packages/kigathi/lyre/src/stubs/repository-interface.stub'));
+
+        $stub = file_get_contents(base_path('vendor/kigathi/lyre/stubs/repository-interface.stub'));
+        if (env('202404150606')) {
+            $stub = file_get_contents(base_path('packages/kigathi/lyre/src/stubs/repository-interface.stub'));
+        }
+
         $stub = str_replace('{{repositoryName}}', $repositoryName, $stub);
         File::put($interfacePath, $stub);
         $this->info("Repository Interface created: $interfacePath");
@@ -27,8 +31,12 @@ trait RepositoryTrait
         if (!File::exists($repositoryDirectory)) {
             File::makeDirectory($repositoryDirectory, 0755, true);
         }
-        // $stub = file_get_contents(base_path('vendor/kigathi/lyre/stubs/repository.stub'));
-        $stub = file_get_contents(base_path('packages/kigathi/lyre/src/stubs/repository.stub'));
+
+        $stub = file_get_contents(base_path('vendor/kigathi/lyre/stubs/repository.stub'));
+        if (env('202404150606')) {
+            $stub = file_get_contents(base_path('packages/kigathi/lyre/src/stubs/repository.stub'));
+        }
+
         $stub = str_replace('{{repositoryName}}', $repositoryName, $stub);
         File::put($repositoryPath, $stub);
         $this->info("Repository Class created: $repositoryPath");
