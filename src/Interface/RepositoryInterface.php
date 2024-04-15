@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre\Interface;
+namespace Lyre\Interface;
 
 interface RepositoryInterface
 {

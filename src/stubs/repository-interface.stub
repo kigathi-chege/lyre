@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Interface;
 
-use Kigathi\Lyre\Interface\RepositoryInterface;
+use Lyre\Interface\RepositoryInterface;
 
 interface {{repositoryName}}RepositoryInterface extends RepositoryInterface
 {

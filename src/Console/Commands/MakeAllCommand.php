@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre\Console\Commands;
+namespace Lyre\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;

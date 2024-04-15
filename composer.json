@@ -28,7 +28,7 @@
   "extra": {
     "laravel": {
       "providers": [
-        "Kigathi\\Lyre\\Providers\\LyreServiceProvider"
+        "Lyre\\Providers\\LyreServiceProvider"
       ]
     }
   }

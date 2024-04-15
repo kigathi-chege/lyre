@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use Kigathi\Lyre\Request;
+use Lyre\Request;
 
 class {{ class }} extends Request
 {

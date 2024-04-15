@@ -1,15 +1,15 @@
 <?php
 
-namespace Kigathi\Lyre\Providers;
+namespace Lyre\Providers;
 
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
-use Kigathi\Lyre\Console\Commands\MakeAllCommand;
-use Kigathi\Lyre\Console\Commands\MakeRepositoryCommand;
-use Kigathi\Lyre\Console\Commands\PublishStubsCommand;
-use Kigathi\Lyre\Facades\Lyre;
-use Kigathi\Lyre\Observer;
-use Kigathi\Lyre\Services\ModelService;
+use Lyre\Console\Commands\MakeAllCommand;
+use Lyre\Console\Commands\MakeRepositoryCommand;
+use Lyre\Console\Commands\PublishStubsCommand;
+use Lyre\Facades\Lyre;
+use Lyre\Observer;
+use Lyre\Services\ModelService;
 
 class LyreServiceProvider extends ServiceProvider
 {
@@ -30,16 +30,15 @@ class LyreServiceProvider extends ServiceProvider
         $this->commands(MakeRepositoryCommand::class);
         $this->commands(PublishStubsCommand::class);
 
-
-        if (env('202404150606')) {
-            require_once base_path('packages/kigathi/lyre/src/helpers/helpers.php');
+        if (config('app.lyre')) {
+            require_once base_path('packages/lyre/src/helpers/helpers.php');
             $this->mergeConfigFrom(
-                base_path('packages/kigathi/lyre/src/config/response-codes.php'), 'response-codes'
+                base_path('packages/lyre/src/config/response-codes.php'), 'response-codes'
             );
         } else {
-            require_once base_path('vendor/kigathi/lyre/helpers/helpers.php');
+            require_once base_path('vendor/lyre/src/helpers/helpers.php');
             $this->mergeConfigFrom(
-                base_path('vendor/kigathi/lyre/config/response-codes.php'), 'response-codes'
+                base_path('vendor/lyre/src/config/response-codes.php'), 'response-codes'
             );
         }
     }

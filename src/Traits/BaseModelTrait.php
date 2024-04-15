@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre\Traits;
+namespace Lyre\Traits;
 
 trait BaseModelTrait
 {

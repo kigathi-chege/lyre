@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre;
+namespace Lyre;
 
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;

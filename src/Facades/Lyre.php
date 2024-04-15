@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre\Facades;
+namespace Lyre\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace Kigathi\Lyre\Services;
+namespace Lyre\Services;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use Kigathi\Lyre\Resource;
+use Lyre\Resource;
 
 class ModelService
 {

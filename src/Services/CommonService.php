@@ -1,8 +1,9 @@
 <?php
 
-namespace Kigathi\Lyre\Services;
+namespace Lyre\Services;
 
-class CommonService {
+class CommonService
+{
     public static function getResponseCode($response)
     {
         $response_codes = config('response-codes');

@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre\Exceptions;
+namespace Lyre\Exceptions;
 
 use Exception;
 

@@ -3,7 +3,7 @@
 namespace {{ namespace }};
 
 use {{ namespacedModel }};
-use Kigathi\Lyre\Policy;
+use Lyre\Policy;
 
 class {{ class }} extends Policy
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre;
+namespace Lyre;
 
 use App\Http\Controllers\Controller as BaseController;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Pluralizer;
-use Kigathi\Lyre\Request as BaseRequest;
-use Kigathi\Lyre\Traits\BaseControllerTrait;
+use Lyre\Request as BaseRequest;
+use Lyre\Traits\BaseControllerTrait;
 
 class Controller extends BaseController
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace Kigathi\Lyre;
+namespace Lyre;
 
 use Illuminate\Support\Facades\Schema;
-use Kigathi\Lyre\Facades\Lyre;
+use Lyre\Facades\Lyre;
 
 class Observer
 {

@@ -2,7 +2,7 @@
 
 namespace App\Repositories;
 
-use Kigathi\Lyre\Repository;
+use Lyre\Repository;
 use App\Models\{{repositoryName}};
 use App\Repositories\Interface\{{repositoryName}}RepositoryInterface;
 

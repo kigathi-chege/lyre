@@ -1,6 +1,6 @@
 <?php
 
-namespace Kigathi\Lyre;
+namespace Lyre;
 
 class Lyre
 {

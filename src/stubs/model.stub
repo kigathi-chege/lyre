@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use Kigathi\Lyre\Model;
+use Lyre\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class {{ class }} extends Model

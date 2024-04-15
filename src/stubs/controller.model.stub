@@ -3,7 +3,7 @@
 namespace {{ namespace }};
 
 use {{ namespacedModel }};
-use Kigathi\Lyre\Controller;
+use Lyre\Controller;
 use App\Repositories\Interface\{{ model }}RepositoryInterface;
 
 class {{ class }} extends Controller

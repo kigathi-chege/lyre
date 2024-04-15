@@ -3,8 +3,8 @@
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Pluralizer;
 use Illuminate\Support\Str;
-use Kigathi\Lyre\Exceptions\CommonException;
-use Kigathi\Lyre\Resource;
+use Lyre\Exceptions\CommonException;
+use Lyre\Resource;
 use Symfony\Component\HttpFoundation\Response;
 
 if (!function_exists("international_format_phone")) {

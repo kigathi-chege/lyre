@@ -1,10 +1,10 @@
 <?php
 
-namespace Kigathi\Lyre;
+namespace Lyre;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model as BaseModel;
-use Kigathi\Lyre\Traits\BaseModelTrait;
+use Lyre\Traits\BaseModelTrait;
 
 class Model extends BaseModel
 {

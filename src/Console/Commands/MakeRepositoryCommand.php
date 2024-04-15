@@ -1,10 +1,10 @@
 <?php
 
-namespace Kigathi\Lyre\Console\Commands;
+namespace Lyre\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
-use Kigathi\Lyre\Traits\RepositoryTrait;
+use Lyre\Traits\RepositoryTrait;
 
 class MakeRepositoryCommand extends Command implements PromptsForMissingInput
 {

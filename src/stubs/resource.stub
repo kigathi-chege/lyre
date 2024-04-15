@@ -2,7 +2,7 @@
 
 namespace {{ namespace }};
 
-use Kigathi\Lyre\Resource;
+use Lyre\Resource;
 use App\Models\{{ class }} as {{ class }}Model;
 
 class {{ class }} extends Resource

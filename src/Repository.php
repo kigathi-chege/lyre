@@ -1,11 +1,11 @@
 <?php
 
-namespace Kigathi\Lyre;
+namespace Lyre;
 
 use Illuminate\Support\Facades\Schema;
-use Kigathi\Lyre\Exceptions\CommonException;
-use Kigathi\Lyre\Facades\Lyre;
-use Kigathi\Lyre\Interface\RepositoryInterface;
+use Lyre\Exceptions\CommonException;
+use Lyre\Facades\Lyre;
+use Lyre\Interface\RepositoryInterface;
 
 class Repository implements RepositoryInterface
 {
