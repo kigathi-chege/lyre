@@ -159,7 +159,7 @@ class Repository implements RepositoryInterface
     public function filter($query, $arguments)
     {
         $arguments = $this->sanitizeArguments($arguments);
-        if ($arguments !== null) {
+        if (!empty($arguments)) {
             $query->where($arguments);
         }
         return $query;
@@ -201,7 +201,13 @@ class Repository implements RepositoryInterface
     public function applyColumnFilters($query)
     {
         if (!empty($this->columnFilters)) {
-            $query = $query->where($this->columnFilters);
+            foreach ($this->columnFilters as $key => $value) {
+                if (is_array($value)) {
+                    $query = $query->whereIn($key, $value);
+                } else {
+                    $query = $query->where($key, $value);
+                }
+            }
         }
         return $query;
     }
@@ -246,8 +252,19 @@ class Repository implements RepositoryInterface
         $allowedColumns = $this->resource::serializableColumns($this->model);
         $allowedColumnKeys = array_unique(array_merge($allowedColumns->keys()->toArray(), $modelFillables));
         $sanitizedArguments = collect($arguments)->only($allowedColumnKeys)->all();
-        $preparedArguments = $this->prepareArguments($allowedColumns, $sanitizedArguments);
+        $preparedArguments = $this->prepareArguments($this->allKnownKeys($modelFillables, $allowedColumns->toArray()), $sanitizedArguments);
         return $preparedArguments;
+    }
+
+    public function allKnownKeys($array1, $array2)
+    {
+        foreach ($array1 as $element) {
+            if (!array_key_exists($element, $array2)) {
+                $result[$element] = $element;
+            }
+        }
+        $result = array_merge($array2, $result);
+        return $result;
     }
 
     public function prepareArguments($keys, $values)
@@ -256,8 +273,11 @@ class Repository implements RepositoryInterface
         foreach ($keys as $key => $newKey) {
             if (isset($values[$key])) {
                 $result[$newKey] = $values[$key];
+            } else if (isset($values[$newKey])) {
+                $result[$newKey] = $values[$newKey];
             }
         }
+
         return $result;
     }
 
