@@ -1,6 +1,7 @@
 {
   "name": "lyre/lyre",
   "description": "One minute CRUD with a simple command to create all resources",
+  "license": "MIT",
   "autoload": {
     "files": [
       "src/helpers/helpers.php"
