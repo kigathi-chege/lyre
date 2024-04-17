@@ -126,11 +126,11 @@ class Controller extends BaseController
     {
         if (isset($this->model[$type]) && class_exists($this->model[$type])) {
             $modelRequest = $this->model[$type];
-            $modelRequestInstance = new $modelRequest($request->all());
-            return $this->sanitizeInputData($request->all(), $modelRequestInstance);
+            $modelRequestInstance = new $modelRequest($request->post());
+            return $this->sanitizeInputData($request->post(), $modelRequestInstance);
         }
 
-        return $request->all();
+        return $request->post();
     }
 
     private function extractScopeFromRouteName()
