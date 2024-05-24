@@ -3,6 +3,7 @@
 namespace Lyre\Providers;
 
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\ServiceProvider;
 use Lyre\Console\Commands\MakeAllCommand;
 use Lyre\Console\Commands\MakeRepositoryCommand;
@@ -48,6 +49,14 @@ class LyreServiceProvider extends ServiceProvider
 
     public function registerRepositories($app)
     {
+        if (!file_exists(app_path('Repositories'))) {
+            File::makeDirectory(app_path('Repositories'));
+        }
+
+        if (!file_exists(app_path('Repositories/Interface'))) {
+            File::makeDirectory(app_path('Repositories/Interface'));
+        }
+
         $repositoryPath = app_path("Repositories");
         $interfacePath = app_path("Repositories/Interface");
 
