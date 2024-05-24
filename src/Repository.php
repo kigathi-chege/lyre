@@ -20,6 +20,8 @@ class Repository implements RepositoryInterface
     protected $methods;
     protected $arguments;
     protected $resource;
+    protected $silent = false;
+    protected $withInactive = false;
 
     public function __construct($model)
     {
@@ -62,6 +64,10 @@ class Repository implements RepositoryInterface
         $query = $this->performOperations($query);
         $resource = $query->first();
         if (!$resource) {
+            if ($this->silent) {
+                return null;
+            }
+
             throw CommonException::fromCode(404, ['model' => $this->model->getTable()]);
         }
         return $this->resource ? new $this->resource($resource) : $query->first();
@@ -78,6 +84,24 @@ class Repository implements RepositoryInterface
         $thisModel = $this->model->create($data);
         return $this->resource ? new $this->resource($thisModel) : $thisModel;
     }
+
+    public function firstOrCreate(array $search, array $data = [])
+    {
+        $thisModel = $this->model->firstOrCreate($search, $data);
+        $result = $this->resource ? new $this->resource($thisModel) : $thisModel;
+        $result->wasRecentlyCreated = $thisModel->wasRecentlyCreated;
+        return $result;
+    }
+
+    public function updateOrCreate(array $search, array $data = [])
+    {
+        $thisModel = $this->model->updateOrCreate($search, $data);
+        $result = $this->resource ? new $this->resource($thisModel) : $thisModel;
+        $result->wasRecentlyCreated = $thisModel->wasRecentlyCreated;
+        return $result;
+    }
+
+    // TODO: Kigathi - May 24 2024 - Add updateOrCreate function
 
     public function update(array $data, string $slug, $thisModel = null)
     {
@@ -138,6 +162,12 @@ class Repository implements RepositoryInterface
         return $this;
     }
 
+    public function silent()
+    {
+        $this->silent = true;
+        return $this;
+    }
+
     public function searchQuery(array $searchQuery)
     {
         $this->searchQuery = $searchQuery;
@@ -153,6 +183,12 @@ class Repository implements RepositoryInterface
         //     $this->relations += $relations;
         // }
 
+        return $this;
+    }
+
+    public function withInactive()
+    {
+        $this->withInactive = true;
         return $this;
     }
 
@@ -293,7 +329,9 @@ class Repository implements RepositoryInterface
         //     return $query;
         // }
         $originQuery = clone $query;
-        $query = $this->filterActive($query);
+        if (!$this->withInactive) {
+            $query = $this->filterActive($query);
+        }
         $query = $query->orderBy('created_at', 'desc');
         $requestQueries = request()->query();
         if (empty($requestQueries)) {
@@ -360,13 +398,17 @@ class Repository implements RepositoryInterface
         return $query;
     }
 
-    // TODO: Kigathi - January 29 2024 - Complete implementation for below method
-    // public function instance($arguments = null)
-    // {
-    //     $arguments = $this->model->find($arguments);
-    //     $thisModel = $this->model->where([get_model_id_column($this->model) => $slug])->first();
-    //     if (!$thisModel) {
-    //         throw CommonException::fromCode(404, ['model' => $this->model->getTable()]);
-    //     }
-    // }
+    public function instance(array $arguments)
+    {
+        $thisModel = $this->model->where($arguments)->first();
+        if (!$thisModel) {
+            throw CommonException::fromCode(404, ['model' => $this->model->getTable()]);
+        }
+        return $thisModel;
+    }
+
+    public function generateConfig()
+    {
+        return $this->model->generateConfig();
+    }
 }

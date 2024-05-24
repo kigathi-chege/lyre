@@ -10,6 +10,8 @@ interface RepositoryInterface
     public function latest();
     public function create(array $data);
     public function update(array $data, string $slug, $model = null);
+    public function firstOrCreate(array $search, array $data = []);
+    public function updateOrCreate(array $search, array $data = []);
     public function delete($id);
     public function relations(array $relations);
     public function columnFilters(array $filters);
@@ -27,4 +29,8 @@ interface RepositoryInterface
     public function collectResource($query);
     public function sanitizeArguments($arguments);
     public function performOperations($query);
+    public function silent();
+    public function generateConfig();
+    public function instance(array $arguments);
+    public function withInactive();
 }

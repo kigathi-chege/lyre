@@ -95,7 +95,17 @@ class Resource extends JsonResource
 
     public static function serializableColumns($resource = null)
     {
-        $columns = [
+        $fillables = $resource->getFillableAttributes();
+        $associatedFillables = array_combine($fillables, $fillables);
+
+        $filteredFillables = [];
+        foreach ($associatedFillables as $key => $value) {
+            if (!preg_match('/_id$/', $key)) {
+                $filteredFillables[$key] = $value;
+            }
+        }
+
+        $columns = $filteredFillables + [
             "id" => get_model_id_column($resource),
             "name" => get_model_name_column($resource),
             "status" => "status",
