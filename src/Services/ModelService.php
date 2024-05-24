@@ -121,4 +121,14 @@ class ModelService
             return $model->$name_col;
         }
     }
+
+    public static function getStatusName($status, $config = null)
+    {
+        $config = $config ?? config('constant.status');
+        if (!is_array($config)) {
+            $config = config($config);
+        }
+        $name = array_search($status, $config);
+        return $name;
+    }
 }
