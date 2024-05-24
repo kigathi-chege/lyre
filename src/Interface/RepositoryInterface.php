@@ -8,6 +8,7 @@ interface RepositoryInterface
     public function trashed();
     public function find($arguments, $filterCallback = null);
     public function latest();
+    public function limit(int $limit);
     public function create(array $data);
     public function update(array $data, string $slug, $model = null);
     public function firstOrCreate(array $search, array $data = []);

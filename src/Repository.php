@@ -22,6 +22,7 @@ class Repository implements RepositoryInterface
     protected $resource;
     protected $silent = false;
     protected $withInactive = false;
+    protected $limit = false;
 
     public function __construct($model)
     {
@@ -43,8 +44,8 @@ class Repository implements RepositoryInterface
         }
         $query = $this->performOperations($query);
         $query = $this->search($query);
-        $results = $paginate ? $query->paginate($this->per_page ?? 10) : $query->get();
-        return $this->collectResource($results, $paginate);
+        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate ? $query->paginate($this->per_page ?? 10) : $query->get());
+        return $this->collectResource($results, $this->limit ? false : $paginate);
     }
 
     public function trashed()
@@ -141,6 +142,12 @@ class Repository implements RepositoryInterface
     public function paginate(int $perPage)
     {
         $this->per_page = $perPage;
+        return $this;
+    }
+
+    public function limit(int $limit)
+    {
+        $this->limit = $limit;
         return $this;
     }
 
