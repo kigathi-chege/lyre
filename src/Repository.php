@@ -16,13 +16,16 @@ class Repository implements RepositoryInterface
     protected $relationFilters = [];
     protected $searchQuery = [];
     protected $operations = [];
-    protected $per_page = 9;
+    protected $perPage = 9;
+    protected $page = 1;
     protected $methods;
     protected $arguments;
     protected $resource;
     protected $silent = false;
     protected $withInactive = false;
     protected $limit = false;
+    protected $orderByColumn = null;
+    protected $orderByOrder = 'desc';
 
     public function __construct($model)
     {
@@ -44,7 +47,8 @@ class Repository implements RepositoryInterface
         }
         $query = $this->performOperations($query);
         $query = $this->search($query);
-        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate ? $query->paginate($this->per_page ?? 10) : $query->get());
+        $query = $this->order($query);
+        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate ? $query->offset(($this->page - 1) * $this->perPage)->paginate($this->perPage ?? 10) : $query->get());
         return $this->collectResource($results, $this->limit ? false : $paginate);
     }
 
@@ -139,9 +143,10 @@ class Repository implements RepositoryInterface
         return $this;
     }
 
-    public function paginate(int $perPage)
+    public function paginate(int $perPage, $page = 1)
     {
-        $this->per_page = $perPage;
+        $this->perPage = $perPage;
+        $this->page = $page;
         return $this;
     }
 
@@ -225,10 +230,17 @@ class Repository implements RepositoryInterface
         return $query;
     }
 
-    public function order($query, array | null $order)
+    public function orderBy(string $column, string $order = 'desc')
     {
-        if ($order) {
-            $query->orderBy($order);
+        $this->orderByColumn = $column;
+        $this->orderByOrder = $order;
+        return $this;
+    }
+
+    public function order($query)
+    {
+        if ($this->orderByColumn) {
+            $query->orderBy($this->orderByColumn, $this->orderByOrder ?? 'desc');
         }
         return $query;
     }
@@ -276,17 +288,6 @@ class Repository implements RepositoryInterface
             }
         }
         return $query;
-    }
-
-    public function collectResource($query, $paginate = true)
-    {
-        if ($query instanceof \Illuminate\Database\Eloquent\Builder) {
-            $query = $query->get();
-        }
-        if (!$this->resource) {
-            return $query;
-        }
-        return $this->resource::prepareCollection($query, $this->resource, $paginate);
     }
 
     public function sanitizeArguments($arguments)
@@ -361,10 +362,10 @@ class Repository implements RepositoryInterface
 
         // TODO: Kigathi - December 23 2023 - Sanitize order by column keys
         if (array_key_exists('order', $requestQueries)) {
-            $query = $query->orderBy(
-                $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at',
-                $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc'
-            );
+            $order1 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at';
+            $order2 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc';
+            $orderString = "{$order1}, {$order2}";
+            $this->orderBy($orderString);
         }
 
         return $query;
@@ -403,6 +404,17 @@ class Repository implements RepositoryInterface
             }
         }
         return $query;
+    }
+
+    public function collectResource($query, $paginate = true)
+    {
+        if ($query instanceof \Illuminate\Database\Eloquent\Builder) {
+            $query = $query->get();
+        }
+        if (!$this->resource) {
+            return $query;
+        }
+        return $this->resource::prepareCollection($query, $this->resource, $paginate);
     }
 
     public function instance(array $arguments)

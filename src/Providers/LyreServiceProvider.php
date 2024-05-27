@@ -25,27 +25,24 @@ class LyreServiceProvider extends ServiceProvider
 
         $this->registerRepositories($this->app);
 
-        $this->registerGlobalObserver();
-
         $this->commands(MakeAllCommand::class);
         $this->commands(MakeRepositoryCommand::class);
         $this->commands(PublishStubsCommand::class);
 
-        if (config('app.lyre')) {
-            require_once base_path('packages/lyre/src/helpers/helpers.php');
-            $this->mergeConfigFrom(
-                base_path('packages/lyre/src/config/response-codes.php'), 'response-codes'
-            );
-        } else {
-            require_once base_path('vendor/lyre/lyre/src/helpers/helpers.php');
-            $this->mergeConfigFrom(
-                base_path('vendor/lyre/lyre/src/config/response-codes.php'), 'response-codes'
-            );
-        }
+        require_once base_path('vendor/lyre/lyre/src/helpers/helpers.php');
+        $this->mergeConfigFrom(
+            base_path('vendor/lyre/lyre/src/config/response-codes.php'), 'response-codes'
+        );
     }
 
     public function boot(): void
-    {}
+    {
+        $this->registerGlobalObserver();
+
+        $this->publishes([
+            __DIR__ . '/../config/lyre.php' => config_path('lyre.php'),
+        ]);
+    }
 
     public function registerRepositories($app)
     {

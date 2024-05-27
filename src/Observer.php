@@ -20,56 +20,68 @@ class Observer
 
     public function updating($model)
     {
-        if (
-            Lyre::getModelIdColumn($model) === "slug" &&
-            $model->isDirty(Lyre::getModelNameColumn($model))
-        ) {
-            Lyre::setSlug($model);
+        if (config('lyre.update-slug')) {
+            if (
+                Lyre::getModelIdColumn($model) === "slug" &&
+                $model->isDirty(Lyre::getModelNameColumn($model))
+            ) {
+                Lyre::setSlug($model);
+            }
         }
     }
 
     public function created($model): void
     {
-        activity('created')
-            ->performedOn($model)
-            ->causedBy(request()->user())
-            ->withProperties($model->toArray())
-            ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        if (config('lyre.activity-log')) {
+            activity('created')
+                ->performedOn($model)
+                ->causedBy(request()->user())
+                ->withProperties($model->toArray())
+                ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        }
     }
 
     public function updated($model): void
     {
-        activity('updated')
-            ->performedOn($model)
-            ->causedBy(request()->user())
-            ->withProperties($model->getChanges())
-            ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        if (config('lyre.activity-log')) {
+            activity('updated')
+                ->performedOn($model)
+                ->causedBy(request()->user())
+                ->withProperties($model->getChanges())
+                ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        }
     }
 
     public function deleted($model): void
     {
-        activity('deleted')
-            ->performedOn($model)
-            ->causedBy(request()->user())
-            ->withProperties($model->toArray())
-            ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        if (config('lyre.activity-log')) {
+            activity('deleted')
+                ->performedOn($model)
+                ->causedBy(request()->user())
+                ->withProperties($model->toArray())
+                ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        }
     }
 
     public function restored($model): void
     {
-        activity('restored')
-            ->performedOn($model)
-            ->causedBy(request()->user())
-            ->withProperties($model->toArray())
-            ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        if (config('lyre.activity-log')) {
+            activity('restored')
+                ->performedOn($model)
+                ->causedBy(request()->user())
+                ->withProperties($model->toArray())
+                ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        }
     }
 
     public function forceDeleted($model): void
     {
-        activity('force deleted')
-            ->performedOn($model)
-            ->causedBy(request()->user())
-            ->withProperties($model->toArray())
-            ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        if (config('lyre.activity-log')) {
+            activity('force deleted')
+                ->performedOn($model)
+                ->causedBy(request()->user())
+                ->withProperties($model->toArray())
+                ->log(Lyre::getModelName($model) ?? Lyre::getModelId($model));
+        }
     }
 }
