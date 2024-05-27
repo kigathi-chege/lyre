@@ -48,7 +48,8 @@ class Repository implements RepositoryInterface
         $query = $this->performOperations($query);
         $query = $this->search($query);
         $query = $this->order($query);
-        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate ? $query->offset(($this->page - 1) * $this->perPage)->paginate($this->perPage ?? 10) : $query->get());
+        // $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate ? $query->offset(($this->page - 1) * $this->perPage)->paginate($this->perPage ?? 10) : $query->get());
+        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
         return $this->collectResource($results, $this->limit ? false : $paginate);
     }
 
