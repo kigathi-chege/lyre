@@ -22,7 +22,7 @@ class MakeAllCommand extends Command
         $this->info("Created a new eloquent model class.");
         Artisan::call('make:resource', ['name' => $modelName]);
         $this->info("Created a new resource.");
-        Artisan::call('make:repository', ['repository' => $modelName]);
+        Artisan::call('lyre:repository', ['repository' => $modelName]);
         $this->info("Created class repository.");
     }
 }
