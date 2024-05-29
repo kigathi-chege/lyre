@@ -10,7 +10,7 @@ class MakeRepositoryCommand extends Command implements PromptsForMissingInput
 {
     use RepositoryTrait;
 
-    protected $signature = 'make:repository
+    protected $signature = 'lyre:repository
                             {repository : The name of the repository}';
 
     protected $description = 'This command generates a repository class';

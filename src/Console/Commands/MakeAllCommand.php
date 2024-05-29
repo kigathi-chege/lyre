@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Artisan;
 
 class MakeAllCommand extends Command
 {
-    protected $signature = 'make:all
+    protected $signature = 'lyre:all
                             {model : The name of the model}';
 
     protected $description = 'This command creates a model with all related classes.';
