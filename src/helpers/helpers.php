@@ -220,48 +220,51 @@ if (!function_exists("keyword_search")) {
     {
         $keyword_formatted = '%' . escape_like($keyword) . '%';
 
-        foreach ($columns as $index => $column) {
-            if (column_exists($query->getModel()->getTable(), $column)) {
-                if ($index === 0) {
-                    $query->where($column, 'LIKE', $keyword_formatted);
-                } else {
-                    $query->orWhere($column, 'LIKE', $keyword_formatted);
-                }
-            }
-        }
-
-        /**
-         * Kigathi - April 1 2024 - Revisit this code later to understand how to retrieve a models relations
-         *
-         * This will be important because it will open the way
-         * for easy searching of related models through their serializable columns
-         * instead of having to define the columns in the search query
-         *   */
-        // $modelRelations = ($query->getModel())->getRelations();
-        // foreach ($modelRelations as $relationName => $relation) {
-        // Check if the related model is the Vehicle model
-        // if ($relation instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
-        //     if ($relation->getRelated() === Vehicle::class) {
-        //         // VehicleMake model has a relationship with Vehicle model
-        //         $relationship = $relationName;
-        //         break;
-        //     }
-        // }
-        // }
-
-        foreach ($relations as $relation => $relationColumns) {
-            $query->orWhereHas($relation, function ($query) use ($keyword_formatted, $relationColumns) {
-                foreach ($relationColumns as $index => $column) {
-                    if (column_exists($query->getModel()->getTable(), $column)) {
-                        if ($index === 0) {
-                            $query->where($column, 'LIKE', $keyword_formatted);
-                        } else {
-                            $query->orWhere($column, 'LIKE', $keyword_formatted);
-                        }
+        $query->where(function ($query) use ($keyword_formatted, $columns, $relations) {
+            foreach ($columns as $index => $column) {
+                if (column_exists($query->getModel()->getTable(), $column)) {
+                    if ($index === 0) {
+                        $query->where($column, 'LIKE', $keyword_formatted);
+                    } else {
+                        $query->orWhere($column, 'LIKE', $keyword_formatted);
                     }
                 }
-            });
-        }
+            }
+
+            /**
+             * Kigathi - April 1 2024 - Revisit this code later to understand how to retrieve a models relations
+             *
+             * This will be important because it will open the way
+             * for easy searching of related models through their serializable columns
+             * instead of having to define the columns in the search query
+             *   */
+            // $modelRelations = ($query->getModel())->getRelations();
+            // foreach ($modelRelations as $relationName => $relation) {
+            // Check if the related model is the Vehicle model
+            // if ($relation instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
+            //     if ($relation->getRelated() === Vehicle::class) {
+            //         // VehicleMake model has a relationship with Vehicle model
+            //         $relationship = $relationName;
+            //         break;
+            //     }
+            // }
+            // }
+
+            foreach ($relations as $relation => $relationColumns) {
+                $query->orWhereHas($relation, function ($query) use ($keyword_formatted, $relationColumns) {
+                    foreach ($relationColumns as $index => $column) {
+                        if (column_exists($query->getModel()->getTable(), $column)) {
+                            if ($index === 0) {
+                                $query->where($column, 'LIKE', $keyword_formatted);
+                            } else {
+                                $query->orWhere($column, 'LIKE', $keyword_formatted);
+                            }
+                        }
+                    }
+                });
+            }
+
+        });
 
         return $query;
     }
