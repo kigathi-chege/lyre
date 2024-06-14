@@ -99,6 +99,16 @@ $data = $this->postRepository->columnFilters(['status' => 'active'])
        ->all()
 ```
 
+### Filtering
+
+- Lyre provides the following query string filters to filter all your data the way you want!
+
+       - `paginate` - This boolean value determines whether pagination is set, default is `true`
+       - `page` - Changes the current page in a paginated request
+       - `per_page` - Changes the number of items returned in the request
+       - `latest` - Returns the latest `value` items
+       - `order` - Returns ordered items, e.g. ?order=id,desc
+
 ## License
 
 Lyre is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

@@ -38,10 +38,32 @@ class Controller extends BaseController
     public function index(Request $request, $scope = null)
     {
         $filterCallBack = $scope ? $this->getScopeCallback($scope) : null;
+
+        $perPage = isset($request->query()['per_page']) ? $request->query()['per_page'] : config('lyre.per-page');
+        $currentPage = isset($request->query()['page']) ? (int) $request->query()['page'] : 1;
+        $latest = isset($request->query()['latest']) ? (int) $request->query()['latest'] : null;
+        $paginate = isset($request->query()['paginate']) ? ($request->query()['paginate'] == 'true' ? true : false) : true;
+        $order = isset($request->query()['order']) ? $request->query()['order'] : null;
+        $trueOrder = explode(',', $order);
+        $orderColumn = $trueOrder[0];
+        $orderDirection = isset($trueOrder[1]) ? $trueOrder[1] : 'desc';
+        if ($orderDirection !== 'asc' && $orderDirection !== 'desc') {
+            $orderDirection = 'desc';
+        }
+        $query = $this->modelRepository;
+        if ($order) {
+            $query = $query->orderBy($orderColumn, $orderDirection);
+        }
+        if ($latest) {
+            $data = $query->limit($latest)->all($filterCallBack);
+        } else {
+            $data = $query->paginate($perPage, $currentPage)->all($filterCallBack, $paginate);
+        }
+
         return curate_response(
             true,
             "Get {$this->modelNamePlural}",
-            $this->modelRepository->all($filterCallBack),
+            $data,
             get_response_code("get-{$this->modelNamePlural}")
         );
     }

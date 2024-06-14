@@ -361,12 +361,13 @@ class Repository implements RepositoryInterface
         }
 
         // TODO: Kigathi - December 23 2023 - Sanitize order by column keys
-        if (array_key_exists('order', $requestQueries)) {
-            $order1 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at';
-            $order2 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc';
-            $orderString = "{$order1}, {$order2}";
-            $this->orderBy($orderString);
-        }
+        // TODO: Kigathi - June 14 2024 - Confirm removal of commented out code
+        // if (array_key_exists('order', $requestQueries)) {
+        //     $order1 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at';
+        //     $order2 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc';
+        //     $orderString = "{$order1}, {$order2}";
+        //     $this->orderBy($orderString);
+        // }
 
         return $query;
     }
