@@ -340,7 +340,9 @@ class Repository implements RepositoryInterface
         if (!$this->withInactive) {
             $query = $this->filterActive($query);
         }
-        $query = $query->orderBy('created_at', 'desc');
+        if (!$this->orderByColumn) {
+            $query = $query->orderBy('created_at', 'desc');
+        }
         $requestQueries = request()->query();
         if (empty($requestQueries)) {
             return $query;
