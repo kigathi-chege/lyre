@@ -15,6 +15,7 @@ interface RepositoryInterface
     public function updateOrCreate(array $search, array $data = []);
     public function delete($id);
     public function relations(array $relations);
+    public function unPaginate();
     public function paginate(int $perPage, $page = 1);
     public function columnFilters(array $filters);
     public function rangeFilters(array $filters);

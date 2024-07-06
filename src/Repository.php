@@ -16,6 +16,7 @@ class Repository implements RepositoryInterface
     protected $relationFilters = [];
     protected $searchQuery = [];
     protected $operations = [];
+    protected $paginate = true;
     protected $perPage = 9;
     protected $page = 1;
     protected $methods;
@@ -48,8 +49,8 @@ class Repository implements RepositoryInterface
         $query = $this->performOperations($query);
         $query = $this->search($query);
         $query = $this->order($query);
-        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
-        return $this->collectResource($results, $this->limit ? false : $paginate);
+        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
+        return $this->collectResource($results, $this->limit ? false : $paginate && $this->paginate);
     }
 
     public function trashed()
@@ -147,6 +148,12 @@ class Repository implements RepositoryInterface
     {
         $this->perPage = $perPage;
         $this->page = $page;
+        return $this;
+    }
+
+    public function unPaginate()
+    {
+        $this->paginate = false;
         return $this;
     }
 
@@ -351,6 +358,7 @@ class Repository implements RepositoryInterface
         $query = $originQuery;
 
         if (array_key_exists('status', $requestQueries)) {
+            // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
             $query = $query->where('status', get_status_code($requestQueries['status'], $this->model));
         } else {
             $query = $this->filterActive($query);
@@ -359,17 +367,81 @@ class Repository implements RepositoryInterface
         if (array_key_exists('with', $requestQueries)) {
             $relationships = explode(',', $requestQueries['with']);
             $validRelationships = $this->filterValidRelationships($relationships);
+            // TODO: Kigathi - 16:27 July 6 2024 - Replace this with $this->relations += $validRelationships;
             $query = $query->with($validRelationships);
         }
 
+        if (array_key_exists('search', $requestQueries)) {
+            $this->searchQuery(['search' => $requestQueries['search']]);
+        }
+
+        if (array_key_exists('unpaginated', $requestQueries)) {
+            $this->unPaginate();
+        }
+
+        // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
+        if (array_key_exists('relation', $requestQueries)) {
+            $parts = explode(",", $requestQueries['relation']);
+            $result = [];
+            for ($i = 0; $i < count($parts); $i += 2) {
+                $relatedModel = $this->model->{$parts[$i]}();
+                $relatedModelClass = get_class($relatedModel->getRelated());
+                $idColumn = $relatedModelClass::ID_COLUMN;
+                $result[$parts[$i]] = "{$idColumn},{$parts[$i + 1]}";
+            }
+            $this->relationFilters = $result;
+        }
+
+        // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
+        if (array_key_exists('range', $requestQueries)) {
+            $parts = explode(",", $requestQueries['range']);
+            $result = [];
+            for ($i = 0; $i < count($parts); $i += 3) {
+                $columnType = Schema::getColumnType($this->model->getTable(), $parts[$i]);
+
+                $value1 = $parts[$i + 1];
+                $value2 = $parts[$i + 2];
+
+                switch ($columnType) {
+                    case 'integer':
+                        $value1 = (int) $value1;
+                        $value2 = (int) $value2;
+                        break;
+                    case 'float':
+                    case 'double':
+                    case 'decimal':
+                        $value1 = (float) $value1;
+                        $value2 = (float) $value2;
+                        break;
+                    case 'date':
+                    case 'datetime':
+                    case 'timestamp':
+                        $value1 = \Carbon\Carbon::parse($value1)->startOfDay();
+                        $value2 = \Carbon\Carbon::parse($value2)->endOfDay();
+                        break;
+                    default:
+                        break;
+                }
+                $result[$parts[$i]] = [$value1, $value2];
+
+            }
+            $this->rangeFilters = $result;
+        }
+
+        if (array_key_exists('filter', $requestQueries)) {
+            $parts = explode(',', $requestQueries['filter']);
+            $result = [];
+            for ($i = 0; $i < count($parts); $i += 2) {
+                $result[$parts[$i]] = $parts[$i + 1];
+            }
+            $this->columnFilters = $result;
+        }
+
         // TODO: Kigathi - December 23 2023 - Sanitize order by column keys
-        // TODO: Kigathi - June 14 2024 - Confirm removal of commented out code
-        // if (array_key_exists('order', $requestQueries)) {
-        //     $order1 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at';
-        //     $order2 = $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc';
-        //     $orderString = "{$order1}, {$order2}";
-        //     $this->orderBy($orderString);
-        // }
+        if (array_key_exists('order', $requestQueries)) {
+            $this->orderByColumn = $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at';
+            $this->orderByOrder = $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc';
+        }
 
         return $query;
     }
