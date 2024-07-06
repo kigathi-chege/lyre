@@ -124,7 +124,8 @@ class ModelService
 
     public static function getStatusName($status, $config = null)
     {
-        $config = $config ?? config('constant.status');
+        $defaultConfigPath = config('lyre.status-config');
+        $config = $config ?? config($defaultConfigPath);
         if (!is_array($config)) {
             $config = config($config);
         }

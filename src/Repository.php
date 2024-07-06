@@ -357,30 +357,30 @@ class Repository implements RepositoryInterface
 
         $query = $originQuery;
 
-        if (array_key_exists('status', $requestQueries)) {
+        if (array_key_exists('status', $requestQueries) && $requestQueries['status']) {
             // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
             $query = $query->where('status', get_status_code($requestQueries['status'], $this->model));
         } else {
             $query = $this->filterActive($query);
         }
 
-        if (array_key_exists('with', $requestQueries)) {
+        if (array_key_exists('with', $requestQueries) && $requestQueries['with']) {
             $relationships = explode(',', $requestQueries['with']);
             $validRelationships = $this->filterValidRelationships($relationships);
             // TODO: Kigathi - 16:27 July 6 2024 - Replace this with $this->relations += $validRelationships;
             $query = $query->with($validRelationships);
         }
 
-        if (array_key_exists('search', $requestQueries)) {
+        if (array_key_exists('search', $requestQueries) && $requestQueries['search']) {
             $this->searchQuery(['search' => $requestQueries['search']]);
         }
 
-        if (array_key_exists('unpaginated', $requestQueries)) {
+        if (array_key_exists('unpaginated', $requestQueries) && $requestQueries['unpaginated'] == 'true') {
             $this->unPaginate();
         }
 
         // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
-        if (array_key_exists('relation', $requestQueries)) {
+        if (array_key_exists('relation', $requestQueries) && $requestQueries['relation']) {
             $parts = explode(",", $requestQueries['relation']);
             $result = [];
             for ($i = 0; $i < count($parts); $i += 2) {
@@ -393,7 +393,7 @@ class Repository implements RepositoryInterface
         }
 
         // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
-        if (array_key_exists('range', $requestQueries)) {
+        if (array_key_exists('range', $requestQueries) && $requestQueries['range']) {
             $parts = explode(",", $requestQueries['range']);
             $result = [];
             for ($i = 0; $i < count($parts); $i += 3) {
@@ -428,7 +428,7 @@ class Repository implements RepositoryInterface
             $this->rangeFilters = $result;
         }
 
-        if (array_key_exists('filter', $requestQueries)) {
+        if (array_key_exists('filter', $requestQueries) && $requestQueries['filter']) {
             $parts = explode(',', $requestQueries['filter']);
             $result = [];
             for ($i = 0; $i < count($parts); $i += 2) {
@@ -438,7 +438,7 @@ class Repository implements RepositoryInterface
         }
 
         // TODO: Kigathi - December 23 2023 - Sanitize order by column keys
-        if (array_key_exists('order', $requestQueries)) {
+        if (array_key_exists('order', $requestQueries) && $requestQueries['order']) {
             $this->orderByColumn = $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at';
             $this->orderByOrder = $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc';
         }
@@ -472,7 +472,12 @@ class Repository implements RepositoryInterface
     public function filterActive($query)
     {
         if (Schema::hasColumn($this->model->getTable(), 'status')) {
-            $statusConfigPath = isset($this->model->generateConfig()['status']) ? config($this->model->generateConfig()['status']) : "constant.status";
+            /**
+             * TODO: Kigathi - 18:00 July 6 2024 - Add a status config variable in lyre.php
+             * This provision should also allow users to choose whether or not to order by desc default, as well as whether to filter by active status by default
+             */
+            $defaultConfigPath = config('lyre.status-config');
+            $statusConfigPath = isset($this->model->generateConfig()['status']) ? config($this->model->generateConfig()['status']) : $defaultConfigPath;
             $statusConfig = config($statusConfigPath);
             if (!$statusConfig || in_array("active", $statusConfig)) {
                 $query = $query->where('status', 'active');

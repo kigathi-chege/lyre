@@ -27,10 +27,18 @@ composer require lyre/lyre
 ```
 
 - Add `LyreServiceProvider` to your providers array under `bootstrap` > `providers.php`
+- Add `user BaseModelTrait` to your `User` model, and to any other existing models.
+- Run `php artisan vendor:publish --provider="Lyre\Providers\LyreServiceProvider"` to publish Lyre configuration.
 - Clear configuration cache
 
+#### Known Issue
+
+- Lyre has problems publishing its stubs
+- You can manually copy the stubs from this link before running the `lyre:all` command for the first time.
+- **[STUBS](https://github.com/kigathi-chege/lyre/tree/master/src/stubs)**
+
 ```bash
-php artisan make:all Post
+php artisan lyre:all Post
 ```
 
 - Add your columns to your migration and migrate

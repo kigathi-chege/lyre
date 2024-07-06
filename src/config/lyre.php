@@ -24,4 +24,9 @@ return [
      * Default perPage value
      */
     'per-page' => 9,
+
+    /**
+     * Default status configuration path
+     */
+    'status-config' => 'constant.status',
 ];
