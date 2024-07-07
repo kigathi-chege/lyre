@@ -372,7 +372,7 @@ class Repository implements RepositoryInterface
         }
 
         if (array_key_exists('search', $requestQueries) && $requestQueries['search']) {
-            $result = [['search' => $requestQueries['search']]];
+            $result['search'] = $requestQueries['search'];
             if (array_key_exists('search-relations', $requestQueries) && $requestQueries['search-relations']) {
                 $parts = explode(",", $requestQueries['search-relations']);
                 $preliminaryResult = [];
