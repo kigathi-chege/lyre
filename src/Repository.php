@@ -372,7 +372,22 @@ class Repository implements RepositoryInterface
         }
 
         if (array_key_exists('search', $requestQueries) && $requestQueries['search']) {
-            $this->searchQuery(['search' => $requestQueries['search']]);
+            $result = [['search' => $requestQueries['search']]];
+            if (array_key_exists('search-relations', $requestQueries) && $requestQueries['search-relations']) {
+                $parts = explode(",", $requestQueries['search-relations']);
+                $preliminaryResult = [];
+                for ($i = 0; $i < count($parts); $i += 2) {
+                    $relation = $parts[$i];
+                    $key = $parts[$i + 1];
+                    /**
+                     * TODO: Kigathi - 14:37 July 7 2024 - Key is an array that expects many relation columns could be searched.
+                     * Lyre currently supports searching through one column only, this should be resolved in the future.
+                     *  */
+                    $preliminaryResult[$relation] = [$key];
+                }
+                $result['relations'] = $preliminaryResult;
+            }
+            $this->searchQuery($result);
         }
 
         if (array_key_exists('unpaginated', $requestQueries) && $requestQueries['unpaginated'] == 'true') {
@@ -477,8 +492,7 @@ class Repository implements RepositoryInterface
              * This provision should also allow users to choose whether or not to order by desc default, as well as whether to filter by active status by default
              */
             $defaultConfigPath = config('lyre.status-config');
-            $statusConfigPath = isset($this->model->generateConfig()['status']) ? config($this->model->generateConfig()['status']) : $defaultConfigPath;
-            $statusConfig = config($statusConfigPath);
+            $statusConfig = isset($this->model->generateConfig()['status']) ? config($this->model->generateConfig()['status']) : config($defaultConfigPath);
             if (!$statusConfig || in_array("active", $statusConfig)) {
                 $query = $query->where('status', 'active');
             }
