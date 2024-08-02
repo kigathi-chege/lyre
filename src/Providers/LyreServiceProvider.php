@@ -91,7 +91,7 @@ class LyreServiceProvider extends ServiceProvider
             $observerClass = "App\Observers\\{$observerName}";
             $modelName = str_replace('Observer.php', '', $observer);
             $modelClass = "App\Models\\{$modelName}";
-            $modelClass::observe($observerClass::class);
+            $modelClass::observe($observerClass);
             $MODELS->forget($modelName);
         }
 
