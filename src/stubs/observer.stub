@@ -1,0 +1,10 @@
+<?php
+
+namespace {{ namespace }};
+
+use Lyre\Observer;
+
+class {{ class }} extends Observer
+{
+    // Override methods here   
+}

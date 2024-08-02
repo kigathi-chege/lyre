@@ -78,10 +78,22 @@ class LyreServiceProvider extends ServiceProvider
 
     private static function registerGlobalObserver()
     {
-        /** @var \Illuminate\Database\Eloquent\Model[] $MODELS */
         $MODELS = collect(Lyre::getModelClasses());
 
-        // TODO: Kigathi - April 15 2024 - Let your service provider offer a way to exempt all or some models from the global observer
+        $observersPath = app_path("Observers");
+        $observers = scandir($observersPath);
+
+        foreach ($observers as $observer) {
+            if ($observer === '.' || $observer === '..' || $observer === 'BaseObserver.php') {
+                continue;
+            }
+            $observerName = str_replace('.php', '', $observer);
+            $observerClass = "App\Observers\\{$observerName}";
+            $modelName = str_replace('Observer.php', '', $observer);
+            $modelClass = "App\Models\\{$modelName}";
+            $modelClass::observe($observerClass::class);
+            $MODELS->forget($modelName);
+        }
 
         foreach ($MODELS as $MODEL) {
             $MODEL::observe(Observer::class);

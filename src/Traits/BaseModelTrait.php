@@ -6,6 +6,7 @@ trait BaseModelTrait
 {
     const ID_COLUMN = 'id';
     const NAME_COLUMN = 'name';
+    const STATUS_CONFIG = 'constant.status';
 
     public function getFillableAttributes()
     {
@@ -40,6 +41,8 @@ trait BaseModelTrait
 
         $updateRequestClass = "\\App\\Http\\Requests\\Update{$class}Request";
         $config['update-request'] = class_exists($updateRequestClass) ? $updateRequestClass : null;
+
+        $config['status'] = $this::STATUS_CONFIG;
 
         $config['table'] = $this->getTable();
 

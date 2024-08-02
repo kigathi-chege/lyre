@@ -107,8 +107,6 @@ class Repository implements RepositoryInterface
         return $result;
     }
 
-    // TODO: Kigathi - May 24 2024 - Add updateOrCreate function
-
     public function update(array $data, string $slug, $thisModel = null)
     {
         if (!$thisModel) {
@@ -392,6 +390,10 @@ class Repository implements RepositoryInterface
 
         if (array_key_exists('unpaginated', $requestQueries) && $requestQueries['unpaginated'] == 'true') {
             $this->unPaginate();
+        }
+
+        if (array_key_exists('limit', $requestQueries) && $requestQueries['limit'] && is_numeric($requestQueries['limit'])) {
+            $this->limit((int) $requestQueries['limit']);
         }
 
         // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
