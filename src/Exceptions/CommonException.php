@@ -15,7 +15,7 @@ class CommonException extends Exception
     public static function of($code, $arguments = [])
     {
         $message = trans("errors.{$code}", $arguments);
-        return new static($message, $code);
+        return new static($message, is_numeric($code) ? $code : 417);
     }
 
     public static function fromMessage($message, $code = 500)
