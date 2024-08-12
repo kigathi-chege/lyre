@@ -307,6 +307,7 @@ class Repository implements RepositoryInterface
 
     public function allKnownKeys($array1, $array2)
     {
+        $result = [];
         foreach ($array1 as $element) {
             if (!array_key_exists($element, $array2)) {
                 $result[$element] = $element;
