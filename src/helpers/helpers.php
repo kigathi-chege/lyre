@@ -351,7 +351,18 @@ if (!function_exists('get_status_code')) {
     {
         $configPath = config("models.{$model->getTable()}.status") ?? 'constant.status';
         $config = config($configPath);
-        return $config[$status] ?? throw CommonException::fromMessage("Status `{$status}` not found for model {$model->getTable()}");
+        if (!$config) {
+            throw CommonException::fromMessage("Status config not found for model {$model->getTable()}");
+        }
+        if (!is_array($config)) {
+            throw CommonException::fromMessage("Status config must be an array");
+        }
+        if (is_array_associative($config)) {
+            $code = ($config[$status] ?? throw CommonException::fromMessage("Status `{$status}` not found for model {$model->getTable()}"));
+        } else {
+            $code = in_array($status, $config) ? $status : throw CommonException::fromMessage("Status `{$status}` not found for model {$model->getTable()}");
+        }
+        return $code;
     }
 }
 
@@ -399,5 +410,16 @@ if (!function_exists("format_price")) {
         $formatted_price = numfmt_format_currency($fmt, $price, $currency);
         $formatted_price = explode('.', $formatted_price)[0];
         return $formatted_price;
+    }
+}
+
+if (!function_exists("is_array_associative")) {
+    function is_array_associative($array)
+    {
+        if (!is_array($array)) {
+            throw CommonException::fromMessage("Argument must be an array");
+        }
+        $keys = array_keys($array);
+        return array_keys($keys) !== $keys;
     }
 }
