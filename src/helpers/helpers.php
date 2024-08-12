@@ -196,7 +196,7 @@ if (!function_exists('get_role_name')) {
         $roleName = array_search($role, $roles);
 
         if (!$roleName) {
-            throw CommonException::fromCode(404, ["model" => "Role"]);
+            throw CommonException::fromMessage("Role not found");
         }
 
         return $roleName;
@@ -377,7 +377,7 @@ if (!function_exists('get_transaction_type_name')) {
             }
         }
         if (!$transaction_type_name) {
-            throw CommonException::fromCode(404, ["model" => "Transaction type {$type}"]);
+            throw CommonException::fromMessage("Transaction type {$type} not found");
         }
         return $transaction_type_name;
     }

@@ -73,8 +73,7 @@ class Repository implements RepositoryInterface
             if ($this->silent) {
                 return null;
             }
-
-            throw CommonException::fromCode(404, ['model' => $this->model->getTable()]);
+            throw CommonException::fromMessage("{$this->model->getTable()} not found");
         }
         return $this->resource ? new $this->resource($resource) : $query->first();
     }
@@ -112,12 +111,12 @@ class Repository implements RepositoryInterface
         if (!$thisModel) {
             $thisModel = $this->model->where([Lyre::getModelIdColumn($this->model) => $slug])->first();
             if (!$thisModel) {
-                throw CommonException::fromCode(404, ['model' => $this->model->getTable()]);
+                throw CommonException::fromMessage("{$this->model->getTable()} not found");
             }
         }
         $data = array_filter($data);
         if (empty($data)) {
-            throw CommonException::fromCode(706);
+            throw CommonException::fromMessage("Nothing to update!");
         }
         if (isset($data['status'])) {
             $data['status'] = get_status_code($data['status'], $thisModel);
@@ -518,7 +517,7 @@ class Repository implements RepositoryInterface
     {
         $thisModel = $this->model->where($arguments)->first();
         if (!$thisModel) {
-            throw CommonException::fromCode(404, ['model' => $this->model->getTable()]);
+            throw CommonException::fromMessage("{$this->model->getTable()} not found");
         }
         return $thisModel;
     }
