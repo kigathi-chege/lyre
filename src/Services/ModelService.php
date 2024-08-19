@@ -25,7 +25,7 @@ class ModelService
                 continue;
             }
             $modelName = str_replace('.php', '', $model);
-            $model = "App\Models\\{$modelName}";
+            $model = config('lyre.model-path') . $modelName;
             $modelClasses[$modelName] = $model;
         }
 

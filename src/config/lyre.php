@@ -29,4 +29,9 @@ return [
      * Default status configuration path
      */
     'status-config' => 'constant.status',
+
+    /**
+     * Default model path
+     */
+    'model-path' => 'App\\Models\\',
 ];

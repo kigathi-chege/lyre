@@ -409,6 +409,13 @@ class Repository implements RepositoryInterface
             $this->relationFilters = $result;
         }
 
+        if (array_key_exists('relation_in', $requestQueries) && $requestQueries['relation_in']) {
+            $parts = explode(",", $requestQueries['relation_in']);
+            $relation = $parts[0];
+            unset($parts[0]);
+            $this->relationFilters = [$relation => $parts];
+        }
+
         // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
         if (array_key_exists('range', $requestQueries) && $requestQueries['range']) {
             $parts = explode(",", $requestQueries['range']);
