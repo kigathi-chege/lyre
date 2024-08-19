@@ -172,6 +172,23 @@ class Repository implements RepositoryInterface
         return $this;
     }
 
+    /**
+     * Expected format of a relation filter:
+     *   [
+     *      'relation' => [
+     *          'column' => 'column',
+     *          'value' => 'value'
+     *          ],
+     *      'relation1' => [
+     *          'column' => 'column1',
+     *          'value' => 'value1'
+     *          ],
+     *      'relation2' => [
+     *          'column' => 'column2',
+     *          'value' => ['value2', 'value3']
+     *          ],
+     *   ]
+     */
     public function relationFilters(array $relationFilters)
     {
         $this->relationFilters = $relationFilters;
@@ -287,8 +304,7 @@ class Repository implements RepositoryInterface
     {
         if (!empty($this->relationFilters)) {
             foreach ($this->relationFilters as $relation => $filter) {
-                $columnValue = explode(',', $filter);
-                $query = filter_by_relationship($query, $relation, $columnValue[0], $columnValue[1]);
+                $query = filter_by_relationship($query, $relation, $filter['column'], $filter['value']);
             }
         }
         return $query;
@@ -396,7 +412,10 @@ class Repository implements RepositoryInterface
             $this->limit((int) $requestQueries['limit']);
         }
 
-        // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
+        /**
+         * Expected query string format for relation:
+         * relation=relation,value,relation1,value1,relation2,value2,relation3,value3,etc
+         */
         if (array_key_exists('relation', $requestQueries) && $requestQueries['relation']) {
             $parts = explode(",", $requestQueries['relation']);
             $result = [];
@@ -404,16 +423,29 @@ class Repository implements RepositoryInterface
                 $relatedModel = $this->model->{$parts[$i]}();
                 $relatedModelClass = get_class($relatedModel->getRelated());
                 $idColumn = $relatedModelClass::ID_COLUMN;
-                $result[$parts[$i]] = "{$idColumn},{$parts[$i + 1]}";
+                $result[$parts[$i]] = [
+                    'column' => $idColumn,
+                    'value' => $parts[$i + 1],
+                ];
             }
-            $this->relationFilters = $result;
+            $this->relationFilters += $result;
         }
 
+        /**
+         * Expected query string format for relation_in:
+         * relation_in=relation,value1,value2,value3...
+         */
         if (array_key_exists('relation_in', $requestQueries) && $requestQueries['relation_in']) {
             $parts = explode(",", $requestQueries['relation_in']);
-            $relation = $parts[0];
-            unset($parts[0]);
-            $this->relationFilters = [$relation => $parts];
+            $relation = array_shift($parts);
+            $relatedModel = $this->model->{$relation}();
+            $relatedModelClass = get_class($relatedModel->getRelated());
+            $idColumn = $relatedModelClass::ID_COLUMN;
+            $filter = [
+                'column' => $idColumn,
+                'value' => $parts,
+            ];
+            $this->relationFilters += [$relation => $filter];
         }
 
         // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.

@@ -273,8 +273,12 @@ if (!function_exists("keyword_search")) {
 if (!function_exists("filter_by_relationship")) {
     function filter_by_relationship($query, $relation, $column, $value)
     {
-        return $query->WhereHas($relation, function ($query) use ($column, $value) {
-            $query->where($column, $value);
+        return $query->whereHas($relation, function ($query) use ($column, $value) {
+            $query->when(
+                is_array($value),
+                fn($q) => $q->whereIn($column, $value),
+                fn($q) => $q->where($column, $value)
+            );
         });
     }
 }
