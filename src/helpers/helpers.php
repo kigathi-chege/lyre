@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Pluralizer;
 use Illuminate\Support\Str;
@@ -425,5 +426,31 @@ if (!function_exists("is_array_associative")) {
         }
         $keys = array_keys($array);
         return array_keys($keys) !== $keys;
+    }
+}
+
+if (!function_exists("get_all_tables")) {
+    function get_all_tables()
+    {
+        $database = config('database.default');
+        switch ($database) {
+            case 'mysql':
+                $tables = DB::select('SHOW TABLES');
+                return array_map(function ($table) {
+                    return array_values((array) $table)[0];
+                }, $tables);
+            case 'pgsql':
+                $tables = DB::select('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\'');
+                return array_map(function ($table) {
+                    return $table->table_name;
+                }, $tables);
+            case 'sqlite':
+                $tables = DB::select('SELECT name FROM sqlite_master WHERE type = \'table\'');
+                return array_map(function ($table) {
+                    return $table->name;
+                }, $tables);
+            default:
+                throw new \Exception('Unsupported database driver');
+        }
     }
 }

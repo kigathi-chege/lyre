@@ -5,7 +5,7 @@ namespace Lyre\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-class MakeAllCommand extends Command
+class TruncateTableCommand extends Command
 {
     protected $signature = 'lyre:truncate
                             {model : The name of the model}';
