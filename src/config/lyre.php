@@ -33,5 +33,5 @@ return [
     /**
      * Default model path
      */
-    'model-path' => 'App\\Models\\',
+    'model-path' => '\App\Models\\',
 ];

@@ -123,7 +123,8 @@ if (!function_exists('get_model_classes')) {
                 continue;
             }
             $modelName = str_replace('.php', '', $model);
-            $model = config('lyre.model-path') . $modelName;
+            $modelPath = config('lyre.model-path') ?? '\App\Models\\';
+            $model = $modelPath . $modelName;
             $modelClasses[$modelName] = $model;
         }
 

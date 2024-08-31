@@ -78,23 +78,23 @@ class LyreServiceProvider extends ServiceProvider
 
     private static function registerGlobalObserver()
     {
-        $MODELS = collect(Lyre::getModelClasses());
-
+        $MODELS = collect(get_model_classes());
         $observersPath = app_path("Observers");
-        $observers = scandir($observersPath);
-
-        foreach ($observers as $observer) {
-            if ($observer === '.' || $observer === '..' || $observer === 'BaseObserver.php') {
-                continue;
+        if (file_exists($observersPath)) {
+            $observers = scandir($observersPath);
+            foreach ($observers as $observer) {
+                if ($observer === '.' || $observer === '..' || $observer === 'BaseObserver.php') {
+                    continue;
+                }
+                $observerName = str_replace('.php', '', $observer);
+                $observerClass = "App\Observers\\{$observerName}";
+                $modelName = str_replace('Observer.php', '', $observer);
+                $modelPath = config('lyre.model-path') ?? '\App\Models\\';
+                $modelClass = $modelPath . $modelName;
+                $modelClass::observe($observerClass);
+                $MODELS->forget($modelName);
             }
-            $observerName = str_replace('.php', '', $observer);
-            $observerClass = "App\Observers\\{$observerName}";
-            $modelName = str_replace('Observer.php', '', $observer);
-            $modelClass = config('lyre.model-path') . $modelName;
-            $modelClass::observe($observerClass);
-            $MODELS->forget($modelName);
         }
-
         foreach ($MODELS as $MODEL) {
             $MODEL::observe(Observer::class);
         }
