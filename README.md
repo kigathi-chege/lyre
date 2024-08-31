@@ -120,3 +120,10 @@ $data = $this->postRepository->columnFilters(['status' => 'active'])
 ## License
 
 Lyre is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Known Issues
+
+### Installation
+
+- All models must use BaseModelTrait, otherwise throws error: Call to a member function connection() on null
+- Fails to publish stubs, creates empty folder. Stubs must be copied from **[STUBS](https://github.com/kigathi-chege/lyre/tree/master/src/stubs)**
