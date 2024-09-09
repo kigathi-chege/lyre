@@ -87,6 +87,42 @@ Route::apiResource('posts', PostController::class);
 
 ### Filters
 
+#### Easily Handle Relationships
+
+- To return a model with all its relationships, simply chain a with method that takes an array of relations when querying the repository like so:
+
+```php
+$data = $this->postRepository->with(['author', 'comments'])->all();
+```
+
+- All you need to do is define the relationships in your model:
+
+```php
+public function author()
+{
+       return $this->belongsTo(User::class, 'user_id');
+}
+
+public function comments()
+{
+       return $this->hasMany(Comment::class);
+}
+```
+
+- Override the loadResources method of the Posts resource in app>Http>Resources>Post
+
+```php
+public static function loadResources(): array
+{
+       return [
+              'author' => User::class,
+              'comments' => Comment::class
+       ];
+}
+```
+
+### Filters
+
 #### Column Filters
 
 - Easily return data filtered by a specific column
@@ -124,7 +160,8 @@ $data = $this->postRepository->searchQuery(['search' => 'lyre'])->all();
 - What is more? You can chain all these methods to fine tune your query!
 
 ```php
-$data = $this->postRepository->columnFilters(['status' => 'active'])
+$data = $this->postRepository->with(['author', 'comments'])
+       ->columnFilters(['status' => 'active'])
        ->rangeFilters(['created' => [now()->subHours(24), now()])
        ->relationFilters('author' => 'id,1')
        ->searchQuery(['search' => 'lyre'])
@@ -135,6 +172,7 @@ $data = $this->postRepository->columnFilters(['status' => 'active'])
 
 - Lyre provides the following query string filters to filter all your data the way you want!
 
+       - `with` - A comma separated list of all the relationships that you want to return in your response
        - `paginate` - This boolean value determines whether pagination is set, default is `true`
        - `page` - Changes the current page in a paginated request
        - `per_page` - Changes the number of items returned in the request
