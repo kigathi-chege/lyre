@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Lyre\Console\Commands\MakeAllCommand;
 use Lyre\Console\Commands\MakeRepositoryCommand;
 use Lyre\Console\Commands\PublishStubsCommand;
+use Lyre\Console\Commands\TruncateTableCommand;
 use Lyre\Facades\Lyre;
 use Lyre\Observer;
 use Lyre\Services\ModelService;
@@ -28,6 +29,7 @@ class LyreServiceProvider extends ServiceProvider
         $this->commands(MakeAllCommand::class);
         $this->commands(MakeRepositoryCommand::class);
         $this->commands(PublishStubsCommand::class);
+        $this->commands(TruncateTableCommand::class);
 
         require_once base_path('vendor/lyre/lyre/src/helpers/helpers.php');
         $this->mergeConfigFrom(

@@ -37,6 +37,11 @@ class Policy
         return $user->can("update-{$this->table}");
     }
 
+    public function bulkUpdate(User $user): bool
+    {
+        return $user->can("bulk-update-{$this->table}");
+    }
+
     public function delete(User $user, $model): bool
     {
         return $user->can("delete-{$this->table}");

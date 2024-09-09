@@ -108,21 +108,26 @@ class Repository implements RepositoryInterface
 
     public function update(array $data, string $slug, $thisModel = null)
     {
-        if (!$thisModel) {
-            $thisModel = $this->model->where([Lyre::getModelIdColumn($this->model) => $slug])->first();
-            if (!$thisModel) {
-                throw CommonException::fromMessage("{$this->model->getTable()} not found");
-            }
+        if ($thisModel) {
+            $thisModel = collect([$thisModel]);
+        } else {
+            $slugs = explode(',', $slug);
+            $thisModel = $this->model->whereIn(get_model_id_column($this->model), $slugs)->get();
+        }
+        if ($thisModel->isEmpty() || $thisModel->count() != count($slugs)) {
+            throw CommonException::fromCode(404, ['model' => $this->model->getTable()]);
         }
         $data = array_filter($data);
         if (empty($data)) {
-            throw CommonException::fromMessage("Nothing to update!");
+            throw CommonException::fromCode(706);
         }
         if (isset($data['status'])) {
-            $data['status'] = get_status_code($data['status'], $thisModel);
+            $data['status'] = get_status_code($data['status'], $thisModel->first());
         }
-        $thisModel->update($data);
-        return $this->resource ? new $this->resource($thisModel) : $thisModel;
+        foreach ($thisModel as $model) {
+            $model->update($data);
+        }
+        return $this->collectResource(query: $thisModel, paginate: false);
     }
 
     public function delete($slug)
@@ -261,7 +266,17 @@ class Repository implements RepositoryInterface
     public function order($query)
     {
         if ($this->orderByColumn) {
-            $query->orderBy($this->orderByColumn, $this->orderByOrder ?? 'desc');
+            if (strpos($this->orderByColumn, '.')) {
+                $parts = explode('.', $this->orderByColumn);
+                $relation = $parts[0];
+                $joinDetails = get_join_details($relation, $this->model);
+                if ($joinDetails) {
+                    $query = $query->join($joinDetails['relatedTable'], $this->model->getTable() . '.' . $joinDetails['foreignKey'], '=', $joinDetails['relatedTable'] . '.' . $joinDetails['relatedKey'])
+                        ->orderBy($joinDetails['relatedTable'] . '.' . $parts[1], $this->orderByOrder ?? 'desc');
+                }
+            } else {
+                $query->orderBy($this->orderByColumn, $this->orderByOrder ?? 'desc');
+            }
         }
         return $query;
     }
@@ -372,8 +387,19 @@ class Repository implements RepositoryInterface
         $query = $originQuery;
 
         if (array_key_exists('status', $requestQueries) && $requestQueries['status']) {
-            // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
-            $query = $query->where('status', get_status_code($requestQueries['status'], $this->model));
+            $statuses = explode(',', $requestQueries['status']);
+            $query->where(function ($query) use ($statuses) {
+                $query->where($this->model->getTable() . '.status', get_status_code($statuses[0], $this->model));
+                if (count($statuses) > 1) {
+                    foreach ($statuses as $key => $status) {
+                        if ($key === 0) {
+                            continue;
+                        } else {
+                            $query->orWhere($this->model->getTable() . '.status', get_status_code($status, $this->model));
+                        }
+                    }
+                }
+            });
         } else {
             $query = $this->filterActive($query);
         }
@@ -381,8 +407,7 @@ class Repository implements RepositoryInterface
         if (array_key_exists('with', $requestQueries) && $requestQueries['with']) {
             $relationships = explode(',', $requestQueries['with']);
             $validRelationships = $this->filterValidRelationships($relationships);
-            // TODO: Kigathi - 16:27 July 6 2024 - Replace this with $this->relations += $validRelationships;
-            $query = $query->with($validRelationships);
+            $this->relations = [ ...$this->relations, ...$validRelationships];
         }
 
         if (array_key_exists('search', $requestQueries) && $requestQueries['search']) {
@@ -449,6 +474,10 @@ class Repository implements RepositoryInterface
         }
 
         // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
+        /**
+         * Expected query string format for range:
+         * range=column1,value1,value2,column2,value3,value4,column3,value5,value6...
+         */
         if (array_key_exists('range', $requestQueries) && $requestQueries['range']) {
             $parts = explode(",", $requestQueries['range']);
             $result = [];
@@ -484,6 +513,10 @@ class Repository implements RepositoryInterface
             $this->rangeFilters = $result;
         }
 
+        /**
+         * Expected query string format for filter:
+         * filter=column1,value1,column2,value2,column3,value3...
+         */
         if (array_key_exists('filter', $requestQueries) && $requestQueries['filter']) {
             $parts = explode(',', $requestQueries['filter']);
             $result = [];
@@ -497,6 +530,17 @@ class Repository implements RepositoryInterface
         if (array_key_exists('order', $requestQueries) && $requestQueries['order']) {
             $this->orderByColumn = $requestQueries['order'] ? explode(',', $requestQueries['order'])[0] : 'created_at';
             $this->orderByOrder = $requestQueries['order'] ? explode(',', $requestQueries['order'])[1] : 'desc';
+        }
+
+        if (array_key_exists('per_page', $requestQueries) && $requestQueries['per_page']) {
+            $perPage = (int) $requestQueries['per_page'];
+            $this->paginate($perPage);
+        }
+
+        if (array_key_exists('page', $requestQueries) && $requestQueries['page']) {
+            $perPage = array_key_exists('per_page', $requestQueries) && $requestQueries['per_page'] ? (int) $requestQueries['per_page'] : $this->perPage;
+            $page = (int) $requestQueries['page'];
+            $this->paginate($perPage, $page);
         }
 
         return $query;
@@ -534,8 +578,8 @@ class Repository implements RepositoryInterface
              */
             $defaultConfigPath = config('lyre.status-config');
             $statusConfig = isset($this->model->generateConfig()['status']) ? config($this->model->generateConfig()['status']) : config($defaultConfigPath);
-            if (!$statusConfig || in_array("active", $statusConfig)) {
-                $query = $query->where('status', 'active');
+            if (!$statusConfig || in_array("active", $statusConfig) || array_key_exists('active', $statusConfig)) {
+                $query = $query->where($this->model->getTable() . '.status', in_array("active", $statusConfig) ? 'active' : get_status_code('active', $this->model));
             }
         }
         return $query;

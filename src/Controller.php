@@ -97,12 +97,12 @@ class Controller extends BaseController
 
     public function update(Request $request, $slug, $scope = null)
     {
-        $modelResource = $this->localAuthorize('update', $scope ?? $slug);
+        $modelResource = $this->localAuthorize(count(explode(',', $slug)) > 1 ? 'bulkUpdate' : 'update', $scope ?? $slug);
         $validatedData = $this->validateData($request, 'update-request');
         return curate_response(
             true,
             "Update {$this->modelName}",
-            $this->modelRepository->update($validatedData, $scope ?? $slug, $modelResource->resource),
+            $this->modelRepository->update($validatedData, $scope ?? $slug, $modelResource->resource ?? null),
             get_response_code("update-{$this->modelName}")
         );
     }
@@ -138,8 +138,9 @@ class Controller extends BaseController
     public function localAuthorize($ability, $identifier, $findCallback = null)
     {
         $modelResource = $this->modelRepository
+            ->silent()
             ->find(["id" => $identifier], $findCallback);
-        $model = $modelResource->resource;
+        $model = $modelResource->resource ?? null;
         $this->authorize($ability, $model);
         return $modelResource;
     }

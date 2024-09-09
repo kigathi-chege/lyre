@@ -455,3 +455,28 @@ if (!function_exists("get_all_tables")) {
         }
     }
 }
+
+if (!function_exists('get_join_details')) {
+    function get_join_details($relationName, $model)
+    {
+        $relation = $model->$relationName();
+
+        if ($relation instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
+            $relatedModel = $relation->getRelated();
+            return [
+                'foreignKey' => $relation->getForeignKeyName(),
+                'relatedKey' => $relation->getOwnerKeyName(),
+                'relatedTable' => $relatedModel->getTable(),
+            ];
+        } elseif ($relation instanceof \Illuminate\Database\Eloquent\Relations\HasMany) {
+            $relatedModel = $relation->getRelated();
+            return [
+                'foreignKey' => $relation->getForeignKeyName(),
+                'relatedKey' => $relation->getLocalKeyName(),
+                'relatedTable' => $relatedModel->getTable(),
+            ];
+        }
+
+        return null; // Or handle other types of relations if needed
+    }
+}
