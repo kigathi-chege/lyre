@@ -13,7 +13,7 @@ Lyre is a php package built for Laravel. Lyre works together with the rich Larav
 
 - [Repositories, as hinted at in Laravel's container docs](https://laravel.com/docs/11.x/container).
 - [Eloquent resources to automatically transform your responses](https://laravel.com/docs/11.x/eloquent-resources).
-- Abstracted resource [controllers](https://laravel.com/docs/11.x/controllers#api-resource-routes) with all your basic CRUD.
+- Abstracted resource [controllers](https://laravel.com/docs/11.x/controllers#api-resource-routes) with all your basic CRUD, maximizing on a naturally RESTFUL API.
 - Comes out of the box with [spatie roles and permissions](https://spatie.be/docs/laravel-permission/v6/introduction) configured with [Laravel policies](https://laravel.com/docs/11.x/authorization#creating-policies).
 - Another out of the box feature: [spatie activity log](https://spatie.be/docs/laravel-activitylog/v4/introduction) configured with [Eloquent observers](https://laravel.com/docs/11.x/eloquent#observers).
 - And finally, [Artisan console commands](https://laravel.com/docs/11.x/artisan#main-content) to rule them all.
@@ -60,6 +60,30 @@ Route::apiResource('posts', PostController::class);
 - **[Spatie Laravel Permission](https://spatie.be/docs/laravel-permission/v6/introduction)**
 
 ## Digging Deeper
+
+### RESTFULNESS
+
+- Lyre is naturally RESTFUL, meaning that after adding your apiResource or resource in your routes file, you will be able to create, update, and delete all records using these routes, borrowed from the above example:
+
+       GET|HEAD        posts
+       POST            posts
+       GET|HEAD        posts/{post}
+       PUT|PATCH       posts/{post}
+       DELETE          posts/{post}
+
+#### Hidden Gem
+
+- Lyre comes with a bulkUpdate option that also follows the RESTFUL convention for batch operations, allowing you to efficiently update multiple records in a single request.
+- All you need to do is comma separate the values in your PUT|PATCH request.
+- For example:
+
+##### Single Update
+
+       posts/1
+
+##### Bulk Update
+
+       posts/1,2,3
 
 ### Filters
 
