@@ -172,7 +172,7 @@ $data = $this->postRepository->with(['author', 'comments'])
        ->all()
 ```
 
-### Filtering
+### API Query Strings
 
 - Lyre provides the following query string filters to filter all your data the way you want!
 
