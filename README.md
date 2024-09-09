@@ -109,7 +109,7 @@ public function comments()
 }
 ```
 
-- Override the loadResources method of the Posts resource in app>Http>Resources>Post
+- Then override the loadResources method of the Posts resource in app>Http>Resources>Post
 
 ```php
 public static function loadResources(): array
@@ -120,6 +120,10 @@ public static function loadResources(): array
        ];
 }
 ```
+
+- Now you will be able to get your model with these relationships using a simple query string
+
+       posts/1?with=author,comments
 
 ### Filters
 
