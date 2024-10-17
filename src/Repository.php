@@ -445,13 +445,16 @@ class Repository implements RepositoryInterface
             $parts = explode(",", $requestQueries['relation']);
             $result = [];
             for ($i = 0; $i < count($parts); $i += 2) {
-                $relatedModel = $this->model->{$parts[$i]}();
-                $relatedModelClass = get_class($relatedModel->getRelated());
-                $idColumn = $relatedModelClass::ID_COLUMN;
-                $result[$parts[$i]] = [
-                    'column' => $idColumn,
-                    'value' => $parts[$i + 1],
-                ];
+                if ($parts[$i]) {
+                    $relatedModel = $this->model->{$parts[$i]}();
+                    $relatedModelClass = get_class($relatedModel->getRelated());
+                    $idColumn = $relatedModelClass::ID_COLUMN;
+                    $idTable = (new $relatedModelClass)->getTable();
+                    $result[$parts[$i]] = [
+                        'column' => "$idTable.$idColumn",
+                        'value' => $parts[$i + 1],
+                    ];
+                }
             }
             $this->relationFilters += $result;
         }
@@ -466,8 +469,9 @@ class Repository implements RepositoryInterface
             $relatedModel = $this->model->{$relation}();
             $relatedModelClass = get_class($relatedModel->getRelated());
             $idColumn = $relatedModelClass::ID_COLUMN;
+            $idTable = (new $relatedModelClass)->getTable();
             $filter = [
-                'column' => $idColumn,
+                'column' => "$idTable.$idColumn",
                 'value' => $parts,
             ];
             $this->relationFilters += [$relation => $filter];
@@ -541,6 +545,23 @@ class Repository implements RepositoryInterface
             $perPage = array_key_exists('per_page', $requestQueries) && $requestQueries['per_page'] ? (int) $requestQueries['per_page'] : $this->perPage;
             $page = (int) $requestQueries['page'];
             $this->paginate($perPage, $page);
+        }
+
+        // TODO: Kigathi - September 11 2024 - Confirm that this code yields the expected results.
+        if (count($requestQueries) > 0) {
+            foreach ($requestQueries as $key => $value) {
+                if (!$key == "search-relations") {
+                    $relatedModel = $this->model->{$key}();
+                    $relatedModelClass = get_class($relatedModel->getRelated());
+                    $idColumn = $relatedModelClass::ID_COLUMN;
+                    $idTable = (new $relatedModelClass)->getTable();
+                    $result[$key] = [
+                        'column' => "$idTable.$idColumn",
+                        'value' => $value,
+                    ];
+                    $this->relationFilters += $result;
+                }
+            }
         }
 
         return $query;
