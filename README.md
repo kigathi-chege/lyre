@@ -196,6 +196,9 @@ Lyre is open-sourced software licensed under the [MIT license](https://opensourc
 
 ### Collaboration
 
+- Update version in the composer.json
+- Push changes to github, push tag to update **[Packagist](https://packagist.org/packages/lyre/lyre)**
+
 ```bash
        git tag x.x.x
        git push origin x.x.x
