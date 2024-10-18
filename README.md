@@ -194,7 +194,7 @@ Lyre is open-sourced software licensed under the [MIT license](https://opensourc
 - All models must use BaseModelTrait, otherwise throws error: Call to a member function connection() on null
 - Fails to publish stubs, creates empty folder. Stubs must be copied from **[STUBS](https://github.com/kigathi-chege/lyre/tree/master/src/stubs)**
 
-### Collaboration
+## Collaboration
 
 - Update version in the composer.json
 - Push changes to github, push tag to update **[Packagist](https://packagist.org/packages/lyre/lyre)**
