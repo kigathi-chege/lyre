@@ -192,7 +192,7 @@ Lyre provides the following query string filters to filter all your data the way
 
 ## Collaboration
 
-- Update version in the composer.json
+- Update version in [composer.json](https://github.com/kigathi-chege/lyre/blob/master/composer.json)
 - Push changes to github, push tag to update **[Packagist](https://packagist.org/packages/lyre/lyre)**
 
 ```bash
