@@ -9,4 +9,6 @@ use Lyre\Traits\BaseModelTrait;
 class Model extends BaseModel
 {
     use HasFactory, BaseModelTrait;
+
+    protected $guarded = ['id'];
 }
