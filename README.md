@@ -183,10 +183,6 @@ Lyre provides the following query string filters to filter all your data the way
 - **latest** - Returns the latest `value` items
 - **order** - Returns ordered items, e.g. ?order=id,desc
 
-## License
-
-Lyre is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
 ## Known Issues
 
 ### Installation
@@ -203,3 +199,7 @@ Lyre is open-sourced software licensed under the [MIT license](https://opensourc
        git tag x.x.x
        git push origin x.x.x
 ```
+
+## License
+
+Lyre is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
