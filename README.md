@@ -174,14 +174,14 @@ $data = $this->postRepository->with(['author', 'comments'])
 
 ### API Query Strings
 
-- Lyre provides the following query string filters to filter all your data the way you want!
+Lyre provides the following query string filters to filter all your data the way you want!
 
-       - `with` - A comma separated list of all the relationships that you want to return in your response
-       - `paginate` - This boolean value determines whether pagination is set, default is `true`
-       - `page` - Changes the current page in a paginated request
-       - `per_page` - Changes the number of items returned in the request
-       - `latest` - Returns the latest `value` items
-       - `order` - Returns ordered items, e.g. ?order=id,desc
+- **with** - A comma separated list of all the relationships that you want to return in your response
+- **paginate** - This boolean value determines whether pagination is set, default is `true`
+- **page** - Changes the current page in a paginated request
+- **per_page** - Changes the number of items returned in the request
+- **latest** - Returns the latest `value` items
+- **order** - Returns ordered items, e.g. ?order=id,desc
 
 ## License
 
