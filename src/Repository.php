@@ -108,6 +108,7 @@ class Repository implements RepositoryInterface
 
     public function update(array $data, string $slug, $thisModel = null)
     {
+        $slugs = [$slug];
         if ($thisModel) {
             $thisModel = collect([$thisModel]);
         } else {
