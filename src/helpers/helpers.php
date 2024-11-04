@@ -477,6 +477,23 @@ if (!function_exists('get_join_details')) {
             ];
         }
 
-        return null; // Or handle other types of relations if needed
+        return null;
+    }
+}
+
+if (!function_exists('retrieve_json_contents')) {
+    function retrieve_json_contents($filePath)
+    {
+        $data = [];
+        if (file_exists($filePath)) {
+            $jsonData = file_get_contents($filePath);
+            $data = json_decode($jsonData, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception('Error parsing JSON file: ' . json_last_error_msg());
+            }
+        } else {
+            throw new Exception('JSON file not found.');
+        }
+        return $data;
     }
 }
