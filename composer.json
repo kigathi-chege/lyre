@@ -2,7 +2,7 @@
   "name": "lyre/lyre",
   "description": "One minute CRUD with a simple command to create all resources",
   "license": "MIT",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "autoload": {
     "files": [
       "src/helpers/helpers.php"
@@ -19,7 +19,7 @@
   ],
   "require": {
     "php": "^8.2",
-    "laravel/framework": "^11.0",
+    "laravel/framework": "^10.0 || ^11.0 || ^12.0",
     "laravel/tinker": "^2.9",
     "spatie/laravel-activitylog": "^4.8",
     "spatie/laravel-permission": "^6.4"
