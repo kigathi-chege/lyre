@@ -27,21 +27,21 @@ composer require lyre/lyre
 ```
 
 - Add `LyreServiceProvider` to your providers array under `bootstrap` > `providers.php`
-- Add `user BaseModelTrait` to your `User` model, and to any other existing models.
+- Add `use BaseModelTrait` to your existing models.
 - Run `php artisan vendor:publish --provider="Lyre\Providers\LyreServiceProvider"` to publish Lyre configuration.
 - Clear configuration cache
-
-#### Known Issue
-
-- Lyre has problems publishing its stubs
-- You can manually copy the stubs from this link before running the `lyre:all` command for the first time.
-- **[STUBS](https://github.com/kigathi-chege/lyre/tree/master/src/stubs)**
 
 ```bash
 php artisan lyre:all Post
 ```
 
 - Add your columns to your migration and migrate
+
+- Enable API routing (If using Laravel > 10)
+
+```bash
+php artisan install:api
+```
 
 - Add your model to your routes file
 
@@ -198,6 +198,38 @@ Lyre provides the following query string filters to filter all your data the way
 ```bash
        git tag x.x.x
        git push origin x.x.x
+```
+
+# USING SPATIE
+
+## Using Activity Log
+
+Publish the migration with:
+
+```bash
+php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-migrations"
+```
+
+## Using Roles and Permissions
+
+Publish the migrations and the configs with:
+
+```bash
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+```
+
+Add the Spatie\Permission\Traits\HasRoles trait to your User model(s):
+
+```php
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    use HasRoles;
+
+    // ...
+}
 ```
 
 ## License

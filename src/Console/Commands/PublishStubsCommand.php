@@ -1,5 +1,4 @@
 <?php
-
 namespace Lyre\Console\Commands;
 
 use Illuminate\Console\Command;
@@ -13,8 +12,7 @@ class PublishStubsCommand extends Command
 
     public function handle()
     {
-        // $sourcePath = base_path('vendor/kigathi/lyre/stubs');
-        $sourcePath = base_path('packages/kigathi/lyre/src/stubs');
+        $sourcePath      = base_path('vendor/lyre/lyre/src/stubs');
         $destinationPath = base_path('stubs');
 
         if (File::exists($destinationPath)) {

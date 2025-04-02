@@ -8,7 +8,7 @@ use Lyre\Exceptions\CommonException;
 use Lyre\Resource;
 use Symfony\Component\HttpFoundation\Response;
 
-if (!function_exists("international_format_phone")) {
+if (! function_exists("international_format_phone")) {
     function international_format_phone($phoneNumber, $countrycode = "254")
     {
         $phoneNumber = preg_replace("/[^0-9]/", "", $phoneNumber);
@@ -21,25 +21,25 @@ if (!function_exists("international_format_phone")) {
     }
 }
 
-if (!function_exists("parse_validation_error_response")) {
+if (! function_exists("parse_validation_error_response")) {
     function parse_validation_error_response($errors)
     {
         return response()->json([
-            "status" => false,
-            "message" => "Validation errors",
+            "status"   => false,
+            "message"  => "Validation errors",
             "response" => $errors,
         ]);
     }
 }
 
-if (!function_exists("curate_response")) {
+if (! function_exists("curate_response")) {
     function curate_response($status, $message, $response, $code = 200, $trace = false)
     {
         $responseData = [
-            "status" => $status,
-            "message" => $message,
+            "status"   => $status,
+            "message"  => $message,
             "response" => $response,
-            "code" => $code,
+            "code"     => $code,
         ];
         if ($trace !== false && env("APP_DEBUG", false)) {
             $responseData['trace'] = $trace;
@@ -47,21 +47,21 @@ if (!function_exists("curate_response")) {
         return response()->json(
             $responseData,
             $status
-            ? 200
-            : (isset(Response::$statusTexts[$code])
-                ? $code
-                : Response::HTTP_EXPECTATION_FAILED)
+                ? 200
+                : (isset(Response::$statusTexts[$code])
+                    ? $code
+                    : ($code == 0 ? Response::HTTP_INTERNAL_SERVER_ERROR : Response::HTTP_EXPECTATION_FAILED))
         );
     }
 }
 
-if (!function_exists('generate_slug')) {
+if (! function_exists('generate_slug')) {
     function generate_slug($model)
     {
         $baseSlug = Str::slug(get_model_name($model));
-        $slug = $baseSlug;
+        $slug     = $baseSlug;
 
-        $counter = 1;
+        $counter    = 1;
         $modelClass = get_class($model);
         do {
             if ($counter > 1) {
@@ -82,7 +82,7 @@ if (!function_exists('generate_slug')) {
     }
 }
 
-if (!function_exists("generate_uuid")) {
+if (! function_exists("generate_uuid")) {
     function generate_uuid($model, $length = 8)
     {
         $uuid = substr(\Illuminate\Support\Str::uuid(), 0, $length);
@@ -95,7 +95,7 @@ if (!function_exists("generate_uuid")) {
     }
 }
 
-if (!function_exists("set_slug")) {
+if (! function_exists("set_slug")) {
     function set_slug($model)
     {
         $slug = generate_slug($model);
@@ -103,7 +103,7 @@ if (!function_exists("set_slug")) {
     }
 }
 
-if (!function_exists("set_uuid")) {
+if (! function_exists("set_uuid")) {
     function set_uuid($model)
     {
         $uuid = generate_uuid($model);
@@ -111,20 +111,20 @@ if (!function_exists("set_uuid")) {
     }
 }
 
-if (!function_exists('get_model_classes')) {
+if (! function_exists('get_model_classes')) {
     function get_model_classes()
     {
-        $modelsPath = app_path("Models");
-        $models = scandir($modelsPath);
+        $modelsPath   = app_path("Models");
+        $models       = scandir($modelsPath);
         $modelClasses = [];
 
         foreach ($models as $model) {
             if ($model === '.' || $model === '..' || $model === 'BaseModel.php') {
                 continue;
             }
-            $modelName = str_replace('.php', '', $model);
-            $modelPath = config('lyre.model-path') ?? '\App\Models\\';
-            $model = $modelPath . $modelName;
+            $modelName                = str_replace('.php', '', $model);
+            $modelPath                = config('lyre.model-path') ?? '\App\Models\\';
+            $model                    = $modelPath . $modelName;
             $modelClasses[$modelName] = $model;
         }
 
@@ -132,10 +132,10 @@ if (!function_exists('get_model_classes')) {
     }
 }
 
-if (!function_exists('get_model_instance')) {
+if (! function_exists('get_model_instance')) {
     function get_model_instance($model)
     {
-        $modelsConfig = config('models');
+        $modelsConfig   = config('models');
         $modelInstances = [];
         foreach ($modelsConfig as $key => $modelConfig) {
             if ($model instanceof $modelConfig['model']) {
@@ -146,7 +146,7 @@ if (!function_exists('get_model_instance')) {
     }
 }
 
-if (!function_exists('get_model_name')) {
+if (! function_exists('get_model_name')) {
     function get_model_name($model)
     {
         $name_col = get_model_name_column($model);
@@ -157,7 +157,7 @@ if (!function_exists('get_model_name')) {
     }
 }
 
-if (!function_exists('get_model_name_column')) {
+if (! function_exists('get_model_name_column')) {
     function get_model_name_column($model)
     {
         $modelConfig = $model->generateConfig();
@@ -165,7 +165,7 @@ if (!function_exists('get_model_name_column')) {
     }
 }
 
-if (!function_exists("get_model_id")) {
+if (! function_exists("get_model_id")) {
     function get_model_id($model)
     {
         $id_col = get_model_id_column($model);
@@ -175,7 +175,7 @@ if (!function_exists("get_model_id")) {
     }
 }
 
-if (!function_exists('get_model_id_column')) {
+if (! function_exists('get_model_id_column')) {
     function get_model_id_column($model)
     {
         $modelConfig = $model->generateConfig();
@@ -183,7 +183,7 @@ if (!function_exists('get_model_id_column')) {
     }
 }
 
-if (!function_exists("get_model_resource")) {
+if (! function_exists("get_model_resource")) {
     function get_model_resource($model)
     {
         $modelConfig = $model->generateConfig();
@@ -191,22 +191,21 @@ if (!function_exists("get_model_resource")) {
     }
 }
 
-if (!function_exists('get_role_name')) {
+if (! function_exists('get_role_name')) {
     function get_role_name($role)
     {
-        $roles = config('constant.role');
+        $roles    = config('constant.role');
         $roleName = array_search($role, $roles);
 
-        if (!$roleName) {
+        if (! $roleName) {
             throw CommonException::fromMessage("Role not found");
         }
 
         return $roleName;
-
     }
 }
 
-if (!function_exists("escape_like")) {
+if (! function_exists("escape_like")) {
     function escape_like(string $value, string $char = '\\'): string
     {
         return str_replace(
@@ -217,7 +216,7 @@ if (!function_exists("escape_like")) {
     }
 }
 
-if (!function_exists("keyword_search")) {
+if (! function_exists("keyword_search")) {
     function keyword_search($query, $keyword, $columns, $relations = [])
     {
         $keyword_formatted = '%' . escape_like($keyword) . '%';
@@ -265,14 +264,13 @@ if (!function_exists("keyword_search")) {
                     }
                 });
             }
-
         });
 
         return $query;
     }
 }
 
-if (!function_exists("filter_by_relationship")) {
+if (! function_exists("filter_by_relationship")) {
     function filter_by_relationship($query, $relation, $column, $value)
     {
         return $query->whereHas($relation, function ($query) use ($column, $value) {
@@ -285,27 +283,27 @@ if (!function_exists("filter_by_relationship")) {
     }
 }
 
-if (!function_exists("column_exists")) {
+if (! function_exists("column_exists")) {
     function column_exists($table, $column)
     {
         return Schema::hasColumn($table, $column);
     }
 }
 
-if (!function_exists("is_nan")) {
+if (! function_exists("is_nan")) {
     function is_nan($value)
     {
-        return !is_numeric($value) || !ctype_digit((string) $value);
+        return ! is_numeric($value) || ! ctype_digit((string) $value);
     }
 }
 
-if (!function_exists("generate_basic_model_permissions")) {
+if (! function_exists("generate_basic_model_permissions")) {
     function generate_basic_model_permissions()
     {
         $permissions = [];
-        $models = get_model_classes();
+        $models      = get_model_classes();
         foreach ($models as $model) {
-            $name = (new $model())->getTable();
+            $name               = (new $model())->getTable();
             $permissions[$name] = [
                 "view-any-{$name}",
                 "view-{$name}",
@@ -320,47 +318,49 @@ if (!function_exists("generate_basic_model_permissions")) {
     }
 }
 
-if (!function_exists("generate_basic_model_response_codes")) {
+if (! function_exists("generate_basic_model_response_codes")) {
     function generate_basic_model_response_codes()
     {
         $responseCodes = [];
-        $responseCode = 10001;
-        $modelClasses = get_model_classes();
+        $responseCode  = 10001;
+        $modelClasses  = get_model_classes();
         foreach ($modelClasses as $modelClass) {
-            $config = (new $modelClass())->generateConfig();
-            $pluralName = $config['table'];
-            $name = Pluralizer::singular($pluralName);
-            $responseCodes += [
-                $responseCode++=> "get-{$pluralName}",
-                $responseCode++=> "find-{$name}",
-                $responseCode++=> "create-{$name}",
-                $responseCode++=> "update-{$name}",
-                $responseCode++=> "destroy-{$name}",
-                $responseCode++=> "restore-{$name}",
-            ];
+            if (method_exists($modelClass, 'generateConfig')) {
+                $config     = (new $modelClass())->generateConfig();
+                $pluralName = $config['table'];
+                $name       = Pluralizer::singular($pluralName);
+                $responseCodes += [
+                    $responseCode++ => "get-{$pluralName}",
+                    $responseCode++ => "find-{$name}",
+                    $responseCode++ => "create-{$name}",
+                    $responseCode++ => "update-{$name}",
+                    $responseCode++ => "destroy-{$name}",
+                    $responseCode++ => "restore-{$name}",
+                ];
+            }
         }
         return $responseCodes;
     }
 }
 
-if (!function_exists('get_response_code')) {
+if (! function_exists('get_response_code')) {
     function get_response_code($response)
     {
         $response_codes = config('response-codes');
-        $code = array_search($response, $response_codes);
+        $code           = array_search($response, $response_codes);
         return $code ?? $response_codes[0000];
     }
 }
 
-if (!function_exists('get_status_code')) {
+if (! function_exists('get_status_code')) {
     function get_status_code($status, $model)
     {
         $configPath = config("models.{$model->getTable()}.status") ?? 'constant.status';
-        $config = config($configPath);
-        if (!$config) {
+        $config     = config($configPath);
+        if (! $config) {
             throw CommonException::fromMessage("Status config not found for model {$model->getTable()}");
         }
-        if (!is_array($config)) {
+        if (! is_array($config)) {
             throw CommonException::fromMessage("Status config must be an array");
         }
         if (is_array_associative($config)) {
@@ -372,57 +372,57 @@ if (!function_exists('get_status_code')) {
     }
 }
 
-if (!function_exists('get_transaction_type_name')) {
+if (! function_exists('get_transaction_type_name')) {
     function get_transaction_type_name($type)
     {
-        $types = config('constant.transaction.types');
+        $types                 = config('constant.transaction.types');
         $transaction_type_name = null;
         foreach ($types as $key => $transactionType) {
             if ($transactionType['reference'] == $type) {
                 $transaction_type_name = $key;
             }
         }
-        if (!$transaction_type_name) {
+        if (! $transaction_type_name) {
             throw CommonException::fromMessage("Transaction type {$type} not found");
         }
         return $transaction_type_name;
     }
 }
 
-if (!function_exists("get_delivery_time_days")) {
+if (! function_exists("get_delivery_time_days")) {
     function get_delivery_time_days($deliveryTime)
     {
         $conversionMap = [
-            'one day' => 1,
-            'two days' => 2,
-            'three days' => 3,
-            'one week' => 7,
-            'two weeks' => 14,
-            'three weeks' => 21,
-            'one month' => 30, // Assuming an average of 30 days in a month
-            'two months' => 60,
+            'one day'      => 1,
+            'two days'     => 2,
+            'three days'   => 3,
+            'one week'     => 7,
+            'two weeks'    => 14,
+            'three weeks'  => 21,
+            'one month'    => 30, // Assuming an average of 30 days in a month
+            'two months'   => 60,
             'three months' => 90,
-            'six months' => 180,
-            'one year' => 365, // Assuming a non-leap year
+            'six months'   => 180,
+            'one year'     => 365, // Assuming a non-leap year
         ];
         return isset($conversionMap[$deliveryTime]) ? $conversionMap[$deliveryTime] : null;
     }
 }
 
-if (!function_exists("format_price")) {
+if (! function_exists("format_price")) {
     function format_price($price, $locale = "en_KE", $currency = "KES")
     {
-        $fmt = numfmt_create($locale, NumberFormatter::CURRENCY);
+        $fmt             = numfmt_create($locale, NumberFormatter::CURRENCY);
         $formatted_price = numfmt_format_currency($fmt, $price, $currency);
         $formatted_price = explode('.', $formatted_price)[0];
         return $formatted_price;
     }
 }
 
-if (!function_exists("is_array_associative")) {
+if (! function_exists("is_array_associative")) {
     function is_array_associative($array)
     {
-        if (!is_array($array)) {
+        if (! is_array($array)) {
             throw CommonException::fromMessage("Argument must be an array");
         }
         $keys = array_keys($array);
@@ -430,7 +430,7 @@ if (!function_exists("is_array_associative")) {
     }
 }
 
-if (!function_exists("get_all_tables")) {
+if (! function_exists("get_all_tables")) {
     function get_all_tables()
     {
         $database = config('database.default');
@@ -456,7 +456,7 @@ if (!function_exists("get_all_tables")) {
     }
 }
 
-if (!function_exists('get_join_details')) {
+if (! function_exists('get_join_details')) {
     function get_join_details($relationName, $model)
     {
         $relation = $model->$relationName();
@@ -464,15 +464,15 @@ if (!function_exists('get_join_details')) {
         if ($relation instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
             $relatedModel = $relation->getRelated();
             return [
-                'foreignKey' => $relation->getForeignKeyName(),
-                'relatedKey' => $relation->getOwnerKeyName(),
+                'foreignKey'   => $relation->getForeignKeyName(),
+                'relatedKey'   => $relation->getOwnerKeyName(),
                 'relatedTable' => $relatedModel->getTable(),
             ];
         } elseif ($relation instanceof \Illuminate\Database\Eloquent\Relations\HasMany) {
             $relatedModel = $relation->getRelated();
             return [
-                'foreignKey' => $relation->getForeignKeyName(),
-                'relatedKey' => $relation->getLocalKeyName(),
+                'foreignKey'   => $relation->getForeignKeyName(),
+                'relatedKey'   => $relation->getLocalKeyName(),
                 'relatedTable' => $relatedModel->getTable(),
             ];
         }
@@ -481,13 +481,13 @@ if (!function_exists('get_join_details')) {
     }
 }
 
-if (!function_exists('retrieve_json_contents')) {
+if (! function_exists('retrieve_json_contents')) {
     function retrieve_json_contents($filePath)
     {
         $data = [];
         if (file_exists($filePath)) {
             $jsonData = file_get_contents($filePath);
-            $data = json_decode($jsonData, true);
+            $data     = json_decode($jsonData, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new Exception('Error parsing JSON file: ' . json_last_error_msg());
             }
@@ -495,5 +495,17 @@ if (!function_exists('retrieve_json_contents')) {
             throw new Exception('JSON file not found.');
         }
         return $data;
+    }
+}
+
+if (! function_exists('clean_str')) {
+    function clean_str($string, $lowercase = true, $replacer = '-')
+    {
+        $string = str_replace(' ', $replacer, $string);          // Replaces all spaces with hyphens.
+        $string = preg_replace('/[^A-Za-z0-9\-]/', '', $string); // Removes special chars.
+        if ($lowercase) {
+            $string = strtolower($string); // Converts string to lowercase.
+        }
+        return $string;
     }
 }

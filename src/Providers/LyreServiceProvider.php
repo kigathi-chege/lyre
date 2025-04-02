@@ -1,9 +1,9 @@
 <?php
-
 namespace Lyre\Providers;
 
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Lyre\Console\Commands\MakeAllCommand;
 use Lyre\Console\Commands\MakeRepositoryCommand;
@@ -39,6 +39,10 @@ class LyreServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Gate::before(function ($user, $ability) {
+            return $user->hasRole("super-admin") ? true : null;
+        });
+
         $this->registerGlobalObserver();
 
         $this->publishes([
@@ -48,19 +52,19 @@ class LyreServiceProvider extends ServiceProvider
 
     public function registerRepositories($app)
     {
-        if (!file_exists(app_path('Repositories'))) {
+        if (! file_exists(app_path('Repositories'))) {
             File::makeDirectory(app_path('Repositories'));
         }
 
-        if (!file_exists(app_path('Repositories/Interface'))) {
+        if (! file_exists(app_path('Repositories/Interface'))) {
             File::makeDirectory(app_path('Repositories/Interface'));
         }
 
         $repositoryPath = app_path("Repositories");
-        $interfacePath = app_path("Repositories/Interface");
+        $interfacePath  = app_path("Repositories/Interface");
 
         $repositories = scandir($repositoryPath);
-        $interfaces = scandir($interfacePath);
+        $interfaces   = scandir($interfacePath);
 
         foreach ($repositories as $repository) {
             if ($repository === '.' || $repository === '..' || $repository === 'BaseRepository.php') {
@@ -68,7 +72,7 @@ class LyreServiceProvider extends ServiceProvider
             }
             $interfaceFile = str_replace('Repository.php', 'RepositoryInterface.php', $repository);
             if (in_array($interfaceFile, $interfaces)) {
-                $interface = 'App\Repositories\Interface\\' . str_replace('.php', '', $interfaceFile);
+                $interface      = 'App\Repositories\Interface\\' . str_replace('.php', '', $interfaceFile);
                 $implementation = 'App\Repositories\\' . str_replace('.php', '', $repository);
 
                 $app->bind($interface, function ($app) use ($implementation) {
@@ -80,7 +84,7 @@ class LyreServiceProvider extends ServiceProvider
 
     private static function registerGlobalObserver()
     {
-        $MODELS = collect(get_model_classes());
+        $MODELS        = collect(get_model_classes());
         $observersPath = app_path("Observers");
         if (file_exists($observersPath)) {
             $observers = scandir($observersPath);
@@ -88,11 +92,11 @@ class LyreServiceProvider extends ServiceProvider
                 if ($observer === '.' || $observer === '..' || $observer === 'BaseObserver.php') {
                     continue;
                 }
-                $observerName = str_replace('.php', '', $observer);
+                $observerName  = str_replace('.php', '', $observer);
                 $observerClass = "App\Observers\\{$observerName}";
-                $modelName = str_replace('Observer.php', '', $observer);
-                $modelPath = config('lyre.model-path') ?? '\App\Models\\';
-                $modelClass = $modelPath . $modelName;
+                $modelName     = str_replace('Observer.php', '', $observer);
+                $modelPath     = config('lyre.model-path') ?? '\App\Models\\';
+                $modelClass    = $modelPath . $modelName;
                 $modelClass::observe($observerClass);
                 $MODELS->forget($modelName);
             }
