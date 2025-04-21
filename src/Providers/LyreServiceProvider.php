@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Lyre\Console\Commands\MakeAllCommand;
+use Lyre\Console\Commands\CacheModelRelationships;
 use Lyre\Console\Commands\MakeRepositoryCommand;
 use Lyre\Console\Commands\PublishStubsCommand;
 use Lyre\Console\Commands\TruncateTableCommand;
@@ -30,10 +31,7 @@ class LyreServiceProvider extends ServiceProvider
 
         $this->registerRepositories($this->app);
 
-        $this->commands(MakeAllCommand::class);
-        $this->commands(MakeRepositoryCommand::class);
-        $this->commands(PublishStubsCommand::class);
-        $this->commands(TruncateTableCommand::class);
+        $this->commands([MakeAllCommand::class, MakeRepositoryCommand::class, PublishStubsCommand::class, TruncateTableCommand::class, CacheModelRelationships::class]);
 
         require_once base_path('vendor/lyre/lyre/src/helpers/helpers.php');
         $this->mergeConfigFrom(

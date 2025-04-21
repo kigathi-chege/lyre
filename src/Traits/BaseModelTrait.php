@@ -105,29 +105,34 @@ trait BaseModelTrait
 
     public static function getModelRelationships(): array
     {
-        $model = new static();
-        $class = new \ReflectionClass($model);
-        $methods = $class->getMethods();
+        $cacheKey = 'model_relationships_' . static::class;
 
-        $relationships = [];
+        return cache()->rememberForever($cacheKey, function () {
 
-        foreach ($methods as $method) {
-            if ($method->class != get_class($model)) continue;
-            if (!empty($method->getParameters())) continue;
+            $model = new static();
+            $class = new \ReflectionClass($model);
+            $methods = $class->getMethods();
 
-            try {
-                $relation = $method->invoke($model);
+            $relationships = [];
 
-                if ($relation instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
-                    $relatedModel = get_class($relation->getRelated());
-                    $relationships[$method->getName()] = $relatedModel;
+            foreach ($methods as $method) {
+                if ($method->class != get_class($model)) continue;
+                if (!empty($method->getParameters())) continue;
+
+                try {
+                    $relation = $method->invoke($model);
+
+                    if ($relation instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
+                        $relatedModel = get_class($relation->getRelated());
+                        $relationships[$method->getName()] = $relatedModel;
+                    }
+                } catch (\Throwable $e) {
+                    // skip methods that can't be invoked
                 }
-            } catch (\Throwable $e) {
-                // skip methods that can't be invoked
             }
-        }
 
-        return $relationships;
+            return $relationships;
+        });
     }
 
     public function searcheableRelations()

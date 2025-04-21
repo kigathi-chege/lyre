@@ -129,12 +129,13 @@ class Resource extends JsonResource
 
     public static function loadResources($resource = null): array
     {
-        if ($resource) {
-            return collect($resource->getModelRelationships())->map(function ($value, $key) {
-                return $value::generateConfig()['resource'];
-            })->filter()->toArray();
+        if (!$resource || ($resource instanceof \App\Models\User)) {
+            return [];
         }
-        return [];
+
+        return collect($resource->getModelRelationships())->map(function ($value, $key) {
+            return $value::generateConfig()['resource'];
+        })->filter()->toArray();
     }
 
     public static function pivotResources(): array
