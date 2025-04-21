@@ -7,6 +7,8 @@ trait BaseModelTrait
     const ID_COLUMN = 'id';
     const NAME_COLUMN = 'name';
     const STATUS_CONFIG = 'constant.status';
+    const ORDER_COLUMN = 'created_at';
+    const ORDER_DIRECTION = 'desc';
 
     public function getFillableAttributes()
     {
@@ -37,6 +39,8 @@ trait BaseModelTrait
         $config['repository-interface'] = static::getRepositoryInterfaceConfig();
         $config['store-request'] = static::getStoreRequestConfig();
         $config['update-request'] = static::getUpdateRequestConfig();
+        $config['order-column'] = static::ORDER_COLUMN;
+        $config['order-direction'] = static::ORDER_DIRECTION;
         $config['status'] = static::STATUS_CONFIG;
         $config['table'] = (new static()->getTable());
         $config['name'] = static::NAME_COLUMN;
@@ -105,7 +109,7 @@ trait BaseModelTrait
 
     public static function getModelRelationships(): array
     {
-        $cacheKey = 'model_relationships_' . static::class;
+        $cacheKey = 'model_relationships_' . static::getClassName();
 
         return cache()->rememberForever($cacheKey, function () {
 

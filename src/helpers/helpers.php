@@ -348,7 +348,7 @@ if (! function_exists("generate_basic_model_response_codes")) {
         $modelClasses  = get_model_classes();
         foreach ($modelClasses as $modelClass) {
             if (method_exists($modelClass, 'generateConfig')) {
-                $config     = (new $modelClass())->generateConfig();
+                $config     = $modelClass::generateConfig();
                 $pluralName = $config['table'];
                 $name       = Pluralizer::singular($pluralName);
                 $responseCodes += [

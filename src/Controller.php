@@ -54,6 +54,8 @@ class Controller extends BaseController
         $query = $this->modelRepository;
         if ($order) {
             $query = $query->orderBy($orderColumn, $orderDirection);
+        } else {
+            $query = $query->orderBy($this->modelInstance::ORDER_COLUMN, $this->modelInstance::ORDER_DIRECTION);
         }
         if ($latest) {
             $data = $query->limit($latest)->all($filterCallBack);
