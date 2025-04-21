@@ -114,23 +114,45 @@ if (! function_exists("set_uuid")) {
 if (! function_exists('get_model_classes')) {
     function get_model_classes()
     {
-        $modelsPath   = app_path("Models");
-        $models       = scandir($modelsPath);
-        $modelClasses = [];
+        $modelsPath     = app_path("Models");
+        $baseNamespace  = 'App\\Models';
+        $modelClasses   = [];
 
-        foreach ($models as $model) {
-            if ($model === '.' || $model === '..' || $model === 'BaseModel.php') {
+        if (!file_exists($modelsPath)) {
+            return $modelClasses;
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($modelsPath),
+            RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($iterator as $file) {
+            if (
+                !$file->isFile() ||
+                $file->getExtension() !== 'php' ||
+                $file->getFilename() === 'BaseModel.php'
+            ) {
                 continue;
             }
-            $modelName                = str_replace('.php', '', $model);
-            $modelPath                = config('lyre.model-path') ?? '\App\Models\\';
-            $model                    = $modelPath . $modelName;
-            $modelClasses[$modelName] = $model;
+
+            // Convert file path to class namespace
+            $relativePath = str_replace($modelsPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $classPath = str_replace(
+                [DIRECTORY_SEPARATOR, '.php'],
+                ['\\', ''],
+                $relativePath
+            );
+
+            $className = $baseNamespace . '\\' . $classPath;
+            $modelName = class_basename($className);
+            $modelClasses[$modelName] = $className;
         }
 
         return $modelClasses;
     }
 }
+
 
 if (! function_exists('get_model_instance')) {
     function get_model_instance($model)

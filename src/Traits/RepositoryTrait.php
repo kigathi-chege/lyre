@@ -6,10 +6,63 @@ use Illuminate\Support\Facades\File;
 
 trait RepositoryTrait
 {
+    /**
+     * TODO: Kigathi - April 16 2025
+     * Introduced changes to handle nested repositories
+     * We have an issue with importing the nested repositories
+     * inside the controller stubs:
+     * /Users/chegekigathi/Projects/lyre/src/stubs/controller.model.api.stub
+     * We also have issues with nested resources and model imports
+     * 
+     * 
+     * Issue with repository generation like:
+     * 
+     * <?php
+     *
+     *  namespace App\Repositories;
+     *
+     *  use Lyre\Repository;
+     *  use App\Models\Content/Button;
+     *  use App\Repositories\Interface\Content/ButtonRepositoryInterface;
+     *
+     *  class Content/ButtonRepository extends Repository implements Content/ButtonRepositoryInterface
+     *  {
+     *      protected $model;
+     *
+     *      public function __construct(Content/Button $model)
+     *      {
+     *          parent::__construct($model);
+     *      }
+     *  }
+     *
+     * Issue namespacing the repository interfaces like:
+     * 
+     * <?php
+     *
+     *  namespace App\Repositories\Interface;
+     *
+     *  use Lyre\Interface\RepositoryInterface;
+     *
+     *  interface Content/ButtonRepositoryInterface extends RepositoryInterface
+     *  {
+     *      // Define interface methods here
+     *  }
+     * 
+     * 
+     * 
+     */
+
     protected function createRepositoryInterface($repositoryName)
     {
-        $interfaceDirectory = app_path("Repositories/Interface");
-        $interfacePath = "{$interfaceDirectory}/{$repositoryName}RepositoryInterface.php";
+        $relativePath = str_replace('\\', '/', $repositoryName);
+
+        $pathParts = explode('/', $relativePath);
+        $repositoryClassName = array_pop($pathParts);
+        $subDirectory = implode('/', $pathParts);
+
+        $interfaceDirectory = app_path('Repositories/Interface' . ($subDirectory ? "/{$subDirectory}" : ''));
+        $interfacePath = "{$interfaceDirectory}/{$repositoryClassName}RepositoryInterface.php";
+
         if (!File::exists($interfaceDirectory)) {
             File::makeDirectory($interfaceDirectory, 0755, true);
         }
@@ -26,8 +79,15 @@ trait RepositoryTrait
 
     protected function createRepositoryClass($repositoryName)
     {
-        $repositoryDirectory = app_path("Repositories");
-        $repositoryPath = "{$repositoryDirectory}/{$repositoryName}Repository.php";
+        $relativePath = str_replace('\\', '/', $repositoryName);
+
+        $pathParts = explode('/', $relativePath);
+        $className = array_pop($pathParts);
+        $subDirectory = implode('/', $pathParts);
+
+        $repositoryDirectory = app_path('Repositories' . ($subDirectory ? "/{$subDirectory}" : ''));
+        $repositoryPath = "{$repositoryDirectory}/{$className}Repository.php";
+
         if (!File::exists($repositoryDirectory)) {
             File::makeDirectory($repositoryDirectory, 0755, true);
         }

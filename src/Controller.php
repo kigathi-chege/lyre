@@ -24,7 +24,8 @@ class Controller extends BaseController
     protected $modelRepository;
 
     public function __construct(
-        $model, $modelRepository
+        $model,
+        $modelRepository
     ) {
         $this->model = $model;
         $this->modelName = $model['table'];
@@ -149,8 +150,20 @@ class Controller extends BaseController
     {
         if (isset($this->model[$type]) && class_exists($this->model[$type])) {
             $modelRequest = $this->model[$type];
-            $modelRequestInstance = new $modelRequest($request->post());
-            return $this->sanitizeInputData($request->post(), $modelRequestInstance);
+            /**
+             * NOTE: Kigathi - April 18 2025
+             * Understand the following commends from ChatGPT, and why it was necessary to do this:
+             *  This way:
+             *  You don't lose file handling
+             *  UploadedFile instances are properly recognized
+             *  authorize() and prepareForValidation() get called as expected
+             *  You get all the features of FormRequest, safely
+             */
+            $modelRequestInstance = app($modelRequest);
+            $modelRequestInstance->setContainer(app())->setRedirector(app('redirect'));
+            $modelRequestInstance->merge(array_merge($request->post(), $request->file()));
+            $modelRequestInstance->validateResolved();
+            return $this->sanitizeInputData(array_merge($request->post(), $request->file()), $modelRequestInstance);
         }
 
         return $request->post();

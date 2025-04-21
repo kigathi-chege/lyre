@@ -408,7 +408,7 @@ class Repository implements RepositoryInterface
         if (array_key_exists('with', $requestQueries) && $requestQueries['with']) {
             $relationships = explode(',', $requestQueries['with']);
             $validRelationships = $this->filterValidRelationships($relationships);
-            $this->relations = [ ...$this->relations, ...$validRelationships];
+            $this->relations = [...$this->relations, ...$validRelationships];
         }
 
         if (array_key_exists('search', $requestQueries) && $requestQueries['search']) {
@@ -513,7 +513,6 @@ class Repository implements RepositoryInterface
                         break;
                 }
                 $result[$parts[$i]] = [$value1, $value2];
-
             }
             $this->rangeFilters = $result;
         }
@@ -570,7 +569,7 @@ class Repository implements RepositoryInterface
 
     private function filterValidRelationships(array $relationships): array
     {
-        $loadResources = $this->resource::loadResources();
+        $loadResources = $this->resource::loadResources($this->model);
         $pivotResources = $this->resource::pivotResources();
         $validRelationships = [];
         foreach ($relationships as $relationship) {

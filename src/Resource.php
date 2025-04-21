@@ -4,6 +4,7 @@ namespace Lyre;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Schema;
 
 class Resource extends JsonResource
 {
@@ -27,7 +28,7 @@ class Resource extends JsonResource
                 return [$attribute => $this->{$column}];
             })
             ->toArray();
-        $baseData = $this->loadRelations($modelResource, $baseData);
+        $baseData = $this->loadRelations($modelResource, $baseData, $this->resource);
         $baseData = $this->pivotRelations($modelResource, $baseData);
         $result = array_filter($baseData, function ($value) {
             return $value !== null;
@@ -52,9 +53,9 @@ class Resource extends JsonResource
         return ['data' => $resource::collection($collection), 'meta' => $paginationData];
     }
 
-    public function loadRelations($resource, array $baseData): array
+    public function loadRelations($resource, array $baseData, $modelInstance): array
     {
-        $allowedRelations = $resource::loadResources();
+        $allowedRelations = $resource::loadResources($modelInstance);
         if (!empty($allowedRelations)) {
             foreach ($allowedRelations as $relation => $resource) {
                 if ($this->relationLoaded($relation)) {
@@ -64,11 +65,13 @@ class Resource extends JsonResource
                     if ($relationData !== null) {
                         // TODO: Kigathi - December 19 2023 - Find an easier and more efficient way to implement this
                         if ($relationObj instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
-                            if ($relationObj instanceof \Illuminate\Database\Eloquent\Relations\HasMany  ||
+                            if (
+                                $relationObj instanceof \Illuminate\Database\Eloquent\Relations\HasMany  ||
                                 $relationObj instanceof \Illuminate\Database\Eloquent\Relations\BelongsToMany  ||
                                 $relationObj instanceof \Illuminate\Database\Eloquent\Relations\HasManyThrough  ||
                                 $relationObj instanceof \Illuminate\Database\Eloquent\Relations\MorphMany  ||
-                                $relationObj instanceof \Illuminate\Database\Eloquent\Relations\MorphToMany) {
+                                $relationObj instanceof \Illuminate\Database\Eloquent\Relations\MorphToMany
+                            ) {
                                 // TODO: Kigathi - December 24 2023 - Return paginated collection results
                                 $baseData[$relation] = $resource::collection($relationData);
                             } else {
@@ -95,17 +98,22 @@ class Resource extends JsonResource
 
     public static function serializableColumns($resource = null)
     {
-        $fillables = $resource->getFillableAttributes();
-        $associatedFillables = array_combine($fillables, $fillables);
+        $baseColumns = $resource->getFillableAttributes();
 
-        $filteredFillables = [];
-        foreach ($associatedFillables as $key => $value) {
+        if (empty($baseColumns)) {
+            $baseColumns = Schema::getColumnListing($resource->getTable());
+        }
+
+        $associatedBaseColumns = array_combine($baseColumns, $baseColumns);
+
+        $filteredBaseColumns = [];
+        foreach ($associatedBaseColumns as $key => $value) {
             if (!preg_match('/_id$/', $key)) {
-                $filteredFillables[$key] = $value;
+                $filteredBaseColumns[$key] = $value;
             }
         }
 
-        $columns = $filteredFillables + [
+        $columns = $filteredBaseColumns + [
             "id" => get_model_id_column($resource),
             "name" => get_model_name_column($resource),
             "status" => "status",
@@ -119,8 +127,13 @@ class Resource extends JsonResource
         return [];
     }
 
-    public static function loadResources(): array
+    public static function loadResources($resource = null): array
     {
+        if ($resource) {
+            return collect($resource->getModelRelationships())->map(function ($value, $key) {
+                return $value::generateConfig()['resource'];
+            })->filter()->toArray();
+        }
         return [];
     }
 

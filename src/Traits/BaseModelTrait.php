@@ -13,44 +13,121 @@ trait BaseModelTrait
         return $this->fillable;
     }
 
-    public function getClassName()
+    public static function getClassName()
     {
         $className = static::class;
         $classNameParts = explode('\\', $className);
         return end($classNameParts);
     }
 
-    public function generateConfig()
+    public static function getRelativeNamespace()
+    {
+        $reflection = new \ReflectionClass(static::class);
+        $namespace = $reflection->getNamespaceName();
+        $relativeNamespace = trim(str_replace('App\Models', '', $namespace), '\\');
+        return $relativeNamespace;
+    }
+
+    public static function generateConfig()
     {
         $config = [];
-        $class = $this->getClassName();
-
-        $config['model'] = static::class;
-
-        $resourceClass = "\\App\\Http\\Resources\\{$class}";
-        $config['resource'] = class_exists($resourceClass) ? $resourceClass : null;
-
-        $repositoryClass = "\\App\\Repositories\\{$class}Repository";
-        $config['repository'] = class_exists($repositoryClass) ? $repositoryClass : null;
-
-        $repositoryInterfaceClass = "\\App\\Repositories\\Interface\\{$class}RepositoryInterface";
-        $config['repository-interface'] = interface_exists($repositoryInterfaceClass) ? $repositoryInterfaceClass : null;
-
-        $storeRequestClass = "\\App\\Http\\Requests\\Store{$class}Request";
-        $config['store-request'] = class_exists($storeRequestClass) ? $storeRequestClass : null;
-
-        $updateRequestClass = "\\App\\Http\\Requests\\Update{$class}Request";
-        $config['update-request'] = class_exists($updateRequestClass) ? $updateRequestClass : null;
-
-        $config['status'] = $this::STATUS_CONFIG;
-
-        $config['table'] = $this->getTable();
-
-        $config['name'] = $this::NAME_COLUMN;
-
-        $config['id'] = $this::ID_COLUMN;
+        $config['model'] = static::getModelNameConfig();
+        $config['resource'] = static::getResourceConfig();
+        $config['repository'] = static::getRepositoryConfig();
+        $config['repository-interface'] = static::getRepositoryInterfaceConfig();
+        $config['store-request'] = static::getStoreRequestConfig();
+        $config['update-request'] = static::getUpdateRequestConfig();
+        $config['status'] = static::STATUS_CONFIG;
+        $config['table'] = (new static()->getTable());
+        $config['name'] = static::NAME_COLUMN;
+        $config['id'] = static::ID_COLUMN;
 
         return $config;
+    }
+
+    public static function getModelNameConfig()
+    {
+        return static::class;
+    }
+
+    public static function getResourceConfig()
+    {
+        return self::resolveNamespacedClass('App\Http\Resources');
+    }
+
+    public static function getRepositoryConfig()
+    {
+        return self::resolveNamespacedClass(
+            baseNamespace: 'App\Repositories',
+            suffix: 'Repository'
+        );
+    }
+
+    public static function getRepositoryInterfaceConfig()
+    {
+        return self::resolveNamespacedClass(
+            baseNamespace: 'App\Repositories\Interface',
+            suffix: 'RepositoryInterface',
+            checkInterface: true
+        );
+    }
+
+    public static function getStoreRequestConfig()
+    {
+        return self::resolveNamespacedClass(
+            baseNamespace: 'App\Http\Requests',
+            prefix: 'Store',
+            suffix: 'Request'
+        );
+    }
+
+    public static function getUpdateRequestConfig()
+    {
+        return self::resolveNamespacedClass(
+            baseNamespace: 'App\Http\Requests',
+            prefix: 'Update',
+            suffix: 'Request'
+        );
+    }
+
+    protected static function resolveNamespacedClass(string $baseNamespace, string $prefix = '', string $suffix = '', bool $checkInterface = false): ?string
+    {
+        $class = self::getClassName();
+        $relativeNamespace = self::getRelativeNamespace();
+        $fullClass = "\\" . $baseNamespace . ($relativeNamespace ? "\\{$relativeNamespace}" : "") . "\\{$prefix}{$class}{$suffix}";
+
+        if ($checkInterface) {
+            return interface_exists($fullClass) ? $fullClass : null;
+        }
+
+        return class_exists($fullClass) ? $fullClass : null;
+    }
+
+    public static function getModelRelationships(): array
+    {
+        $model = new static();
+        $class = new \ReflectionClass($model);
+        $methods = $class->getMethods();
+
+        $relationships = [];
+
+        foreach ($methods as $method) {
+            if ($method->class != get_class($model)) continue;
+            if (!empty($method->getParameters())) continue;
+
+            try {
+                $relation = $method->invoke($model);
+
+                if ($relation instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
+                    $relatedModel = get_class($relation->getRelated());
+                    $relationships[$method->getName()] = $relatedModel;
+                }
+            } catch (\Throwable $e) {
+                // skip methods that can't be invoked
+            }
+        }
+
+        return $relationships;
     }
 
     public function searcheableRelations()

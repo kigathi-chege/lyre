@@ -13,3 +13,8 @@ August 19 2024 18:06
  - Lyre enforces strict policies
  - Make these policies lax, and add a flag during creation to optionally make them strict
  - php artisan lyre:app Post --strict
+
+April 21 2025 13:47
+
+ - Update README for bulkUpdate, describe the payload
+ - Automatically load relationships without having to explicitly do a loadResources override

@@ -1,4 +1,5 @@
 <?php
+
 namespace Lyre\Providers;
 
 use Illuminate\Foundation\AliasLoader;
@@ -12,6 +13,9 @@ use Lyre\Console\Commands\TruncateTableCommand;
 use Lyre\Facades\Lyre;
 use Lyre\Observer;
 use Lyre\Services\ModelService;
+use RecursiveIteratorIterator;
+use RecursiveDirectoryIterator;
+use Illuminate\Support\Str;
 
 class LyreServiceProvider extends ServiceProvider
 {
@@ -33,7 +37,8 @@ class LyreServiceProvider extends ServiceProvider
 
         require_once base_path('vendor/lyre/lyre/src/helpers/helpers.php');
         $this->mergeConfigFrom(
-            base_path('vendor/lyre/lyre/src/config/response-codes.php'), 'response-codes'
+            base_path('vendor/lyre/lyre/src/config/response-codes.php'),
+            'response-codes'
         );
     }
 
@@ -63,20 +68,34 @@ class LyreServiceProvider extends ServiceProvider
         $repositoryPath = app_path("Repositories");
         $interfacePath  = app_path("Repositories/Interface");
 
-        $repositories = scandir($repositoryPath);
-        $interfaces   = scandir($interfacePath);
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($repositoryPath)
+        );
 
-        foreach ($repositories as $repository) {
-            if ($repository === '.' || $repository === '..' || $repository === 'BaseRepository.php') {
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) continue;
+
+            $fileName = $file->getFilename();
+
+            // TODO: Kigathi - April 21 2025 - Allow overriding the Repository.php by introducing a BaseRepository.php file at the repositoryPath
+            if (!Str::endsWith($fileName, 'Repository.php') || $fileName === 'BaseRepository.php') {
                 continue;
             }
-            $interfaceFile = str_replace('Repository.php', 'RepositoryInterface.php', $repository);
-            if (in_array($interfaceFile, $interfaces)) {
-                $interface      = 'App\Repositories\Interface\\' . str_replace('.php', '', $interfaceFile);
-                $implementation = 'App\Repositories\\' . str_replace('.php', '', $repository);
 
-                $app->bind($interface, function ($app) use ($implementation) {
-                    return $app->make($implementation);
+            // Get relative path from the Repositories directory
+            $relativePath = Str::after($file->getPathname(), $repositoryPath . DIRECTORY_SEPARATOR);
+            $namespacePath = str_replace(['/', '\\'], '\\', Str::replaceLast('.php', '', $relativePath));
+
+            // Interface path must match the same relative structure
+            $interfaceNamespace = 'App\\Repositories\\Interface\\' . $namespacePath . 'Interface';
+            $implementationNamespace = 'App\\Repositories\\' . $namespacePath;
+
+            // Interface file must exist
+            $interfaceFilePath = $interfacePath . DIRECTORY_SEPARATOR . Str::replaceLast('Repository.php', 'RepositoryInterface.php', $relativePath);
+
+            if (file_exists($interfaceFilePath)) {
+                $app->bind($interfaceNamespace, function ($app) use ($implementationNamespace) {
+                    return $app->make($implementationNamespace);
                 });
             }
         }
@@ -84,23 +103,44 @@ class LyreServiceProvider extends ServiceProvider
 
     private static function registerGlobalObserver()
     {
-        $MODELS        = collect(get_model_classes());
+        $MODELS        = collect(get_model_classes()); // ['User' => 'App\Models\User']
         $observersPath = app_path("Observers");
+        $baseNamespace = "App\\Observers";
+
         if (file_exists($observersPath)) {
-            $observers = scandir($observersPath);
-            foreach ($observers as $observer) {
-                if ($observer === '.' || $observer === '..' || $observer === 'BaseObserver.php') {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($observersPath),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+
+            foreach ($iterator as $file) {
+                if (
+                    !$file->isFile() ||
+                    $file->getExtension() !== 'php' ||
+                    $file->getFilename() === 'BaseObserver.php'
+                ) {
                     continue;
                 }
-                $observerName  = str_replace('.php', '', $observer);
-                $observerClass = "App\Observers\\{$observerName}";
-                $modelName     = str_replace('Observer.php', '', $observer);
-                $modelPath     = config('lyre.model-path') ?? '\App\Models\\';
-                $modelClass    = $modelPath . $modelName;
-                $modelClass::observe($observerClass);
-                $MODELS->forget($modelName);
+
+                $relativePath = str_replace($observersPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+                $classPath = str_replace(
+                    [DIRECTORY_SEPARATOR, '.php'],
+                    ['\\', ''],
+                    $relativePath
+                );
+
+                $observerClass = $baseNamespace . '\\' . $classPath;
+                $observerName  = class_basename($observerClass);
+                $modelName     = str_replace('Observer', '', $observerName);
+
+                if (isset($MODELS[$modelName]) && class_exists($observerClass)) {
+                    $modelClass = $MODELS[$modelName];
+                    $modelClass::observe($observerClass);
+                    $MODELS->forget($modelName);
+                }
             }
         }
+
         foreach ($MODELS as $MODEL) {
             $MODEL::observe(Observer::class);
         }
