@@ -181,7 +181,10 @@ Lyre provides the following query string filters to filter all your data the way
 - **page** - Changes the current page in a paginated request
 - **per_page** - Changes the number of items returned in the request
 - **latest** - Returns the latest `value` items
-- **order** - Returns ordered items, e.g. ?order=id,desc
+- **order** - Returns ordered items, e.g. `/subjects?order=name,asc`
+- **relation** - Filter by a column in a related table, i.e. `/subjects?relation=courses,english` returns only the Subjects that belong to an English course
+- **search** - Search through all columns for a string match, e.g. `/subjects?search=physics`
+- **startswith** - Get all rows whose `NAME_COLUMN` startswith substring, e.g. `/subjects?startswith=b`
 
 ## Known Issues
 

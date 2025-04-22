@@ -96,7 +96,7 @@ class Resource extends JsonResource
         return $baseData;
     }
 
-    public static function serializableColumns($resource = null)
+    public static function serializableColumns($resource)
     {
         $baseColumns = $resource->getFillableAttributes();
 

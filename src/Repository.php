@@ -2,6 +2,7 @@
 
 namespace Lyre;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Lyre\Exceptions\CommonException;
 use Lyre\Facades\Lyre;
@@ -27,6 +28,7 @@ class Repository implements RepositoryInterface
     protected $limit = false;
     protected $orderByColumn = null;
     protected $orderByOrder = 'desc';
+    protected $startsWith = null;
 
     public function __construct($model)
     {
@@ -49,6 +51,7 @@ class Repository implements RepositoryInterface
         $query = $this->performOperations($query);
         $query = $this->search($query);
         $query = $this->order($query);
+        $query = $this->applyStartsWith($query);
         $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
         return $this->collectResource($results, $this->limit ? false : $paginate && $this->paginate);
     }
@@ -231,6 +234,19 @@ class Repository implements RepositoryInterface
         return $this;
     }
 
+    public function orderBy(string $column, string $order = 'desc')
+    {
+        $this->orderByColumn = $column;
+        $this->orderByOrder = $order;
+        return $this;
+    }
+
+    public function startsWith(string $startsWith)
+    {
+        $this->startsWith = $startsWith;
+        return $this;
+    }
+
     public function filter($query, $arguments)
     {
         $arguments = $this->sanitizeArguments($arguments);
@@ -250,18 +266,11 @@ class Repository implements RepositoryInterface
                     $this->model->load($relations);
                 }
 
-                $serializableColumns = $this->resource::serializableColumns()->values()->toArray();
+                $serializableColumns = $this->resource::serializableColumns($this->model)->values()->toArray();
                 $query = keyword_search($query, $search, $serializableColumns, $relations);
             }
         }
         return $query;
-    }
-
-    public function orderBy(string $column, string $order = 'desc')
-    {
-        $this->orderByColumn = $column;
-        $this->orderByOrder = $order;
-        return $this;
     }
 
     public function order($query)
@@ -323,6 +332,17 @@ class Repository implements RepositoryInterface
                 $query = filter_by_relationship($query, $relation, $filter['column'], $filter['value']);
             }
         }
+        return $query;
+    }
+
+    public function applyStartsWith($query)
+    {
+        if (!empty($this->startsWith)) {
+            $column = $this->model::NAME_COLUMN;
+            $operator = DB::getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query = $query->where($column, $operator, $this->startsWith . '%');
+        }
+
         return $query;
     }
 
@@ -545,6 +565,11 @@ class Repository implements RepositoryInterface
             $perPage = array_key_exists('per_page', $requestQueries) && $requestQueries['per_page'] ? (int) $requestQueries['per_page'] : $this->perPage;
             $page = (int) $requestQueries['page'];
             $this->paginate($perPage, $page);
+        }
+
+        if (array_key_exists('startswith', $requestQueries) && $requestQueries['startswith']) {
+            $startsWith = $requestQueries['startswith'];
+            $this->startsWith($startsWith);
         }
 
         // TODO: Kigathi - September 11 2024 - Confirm that this code yields the expected results.
