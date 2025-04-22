@@ -10,6 +10,9 @@ trait BaseModelTrait
     const ORDER_COLUMN = 'created_at';
     const ORDER_DIRECTION = 'desc';
 
+    protected $customColumns = [];
+    protected static $globalCustomColumns = [];
+
     public function getFillableAttributes()
     {
         return $this->fillable;
@@ -142,5 +145,20 @@ trait BaseModelTrait
     public function searcheableRelations()
     {
         return [];
+    }
+
+    public static function setGlobalCustomColumns(array $columns)
+    {
+        static::$globalCustomColumns = $columns;
+    }
+
+    public function getCustomColumns()
+    {
+        return $this->customColumns ?: static::$globalCustomColumns;
+    }
+
+    public function setCustomColumns(array $columns)
+    {
+        $this->customColumns = $columns;
     }
 }

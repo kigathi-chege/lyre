@@ -185,6 +185,7 @@ Lyre provides the following query string filters to filter all your data the way
 - **relation** - Filter by a column in a related table, i.e. `/subjects?relation=courses,english` returns only the Subjects that belong to an English course
 - **search** - Search through all columns for a string match, e.g. `/subjects?search=physics`
 - **startswith** - Get all rows whose `NAME_COLUMN` startswith substring, e.g. `/subjects?startswith=b`
+- **withcount** - Get the count of a relationship, e.g. `/subjects?withcount=tasks` returns with a `tasks_count` field containing the number of tasks for each subject.
 
 ## Known Issues
 

@@ -29,6 +29,7 @@ class Repository implements RepositoryInterface
     protected $orderByColumn = null;
     protected $orderByOrder = 'desc';
     protected $startsWith = null;
+    protected $withCount = [];
 
     public function __construct($model)
     {
@@ -52,6 +53,7 @@ class Repository implements RepositoryInterface
         $query = $this->search($query);
         $query = $this->order($query);
         $query = $this->applyStartsWith($query);
+        $query = $this->applyWithCount($query);
         $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
         return $this->collectResource($results, $this->limit ? false : $paginate && $this->paginate);
     }
@@ -247,6 +249,12 @@ class Repository implements RepositoryInterface
         return $this;
     }
 
+    public function withCount(string | array $relation)
+    {
+        $this->withCount += $relation;
+        return $this;
+    }
+
     public function filter($query, $arguments)
     {
         $arguments = $this->sanitizeArguments($arguments);
@@ -343,6 +351,16 @@ class Repository implements RepositoryInterface
             $query = $query->where($column, $operator, $this->startsWith . '%');
         }
 
+        return $query;
+    }
+
+    public function applyWithCount($query)
+    {
+        if (!empty($this->withCount)) {
+            $query = $query->withCount($this->withCount);
+            $countsWithSuffix = array_map(fn($item) => $item . '_count', $this->withCount);
+            $this->model::setGlobalCustomColumns($countsWithSuffix);
+        }
         return $query;
     }
 
@@ -570,6 +588,11 @@ class Repository implements RepositoryInterface
         if (array_key_exists('startswith', $requestQueries) && $requestQueries['startswith']) {
             $startsWith = $requestQueries['startswith'];
             $this->startsWith($startsWith);
+        }
+
+        if (array_key_exists('withcount', $requestQueries) && $requestQueries['withcount']) {
+            $withCount = explode(',', $requestQueries['withcount']);
+            $this->withCount($withCount);
         }
 
         // TODO: Kigathi - September 11 2024 - Confirm that this code yields the expected results.
