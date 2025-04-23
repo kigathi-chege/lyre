@@ -17,20 +17,20 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, ValidatesRequests, BaseControllerTrait;
 
-    protected $model;
+    protected $modelConfig;
     protected $modelName;
     protected $modelNamePlural;
     protected $modelInstance;
     protected $modelRepository;
 
     public function __construct(
-        $model,
+        $modelConfig,
         $modelRepository
     ) {
-        $this->model = $model;
-        $this->modelName = $model['table'];
-        $this->modelNamePlural = Pluralizer::plural($model['table']);
-        $this->modelInstance = new $model['model']();
+        $this->modelConfig = $modelConfig;
+        $this->modelName = $modelConfig['table'];
+        $this->modelNamePlural = Pluralizer::plural($modelConfig['table']);
+        $this->modelInstance = new $modelConfig['model']();
         $this->modelRepository = $modelRepository;
         Config::set('request-model', $this->modelInstance);
         $this->globalAuthorize();
@@ -133,7 +133,7 @@ class Controller extends BaseController
 
     public function globalAuthorize(array $except = [])
     {
-        $this->authorizeResource($this->model, $this->modelName, [
+        $this->authorizeResource($this->modelConfig, $this->modelName, [
             'except' => empty($except) ? ['show', 'update', 'destroy'] : $except,
         ]);
     }
@@ -142,7 +142,7 @@ class Controller extends BaseController
     {
         $modelResource = $this->modelRepository
             ->silent()
-            ->find(["id" => $identifier], $findCallback);
+            ->find([$this->modelConfig['id'] => $identifier], $findCallback);
         $model = $modelResource->resource ?? null;
         $this->authorize($ability, $model);
         return $modelResource;
@@ -150,8 +150,8 @@ class Controller extends BaseController
 
     public function validateData(Request $request, $type = "store-request")
     {
-        if (isset($this->model[$type]) && class_exists($this->model[$type])) {
-            $modelRequest = $this->model[$type];
+        if (isset($this->modelConfig[$type]) && class_exists($this->modelConfig[$type])) {
+            $modelRequest = $this->modelConfig[$type];
             /**
              * NOTE: Kigathi - April 18 2025
              * Understand the following commends from ChatGPT, and why it was necessary to do this:
