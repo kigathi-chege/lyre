@@ -45,7 +45,7 @@ trait BaseModelTrait
         $config['order-column'] = static::ORDER_COLUMN;
         $config['order-direction'] = static::ORDER_DIRECTION;
         $config['status'] = static::STATUS_CONFIG;
-        $config['table'] = (new static()->getTable());
+        $config['table'] = (new static())->getTable();
         $config['name'] = static::NAME_COLUMN;
         $config['id'] = static::ID_COLUMN;
 
