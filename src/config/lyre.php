@@ -34,4 +34,14 @@ return [
      * Default model path
      */
     'model-path' => '\App\Models\\',
+
+    /**
+     * Super admin role name
+     */
+    'super-admin' => 'super-admin',
+
+    /**
+     * Default password
+     */
+    'password'      => 'P@ssword1',
 ];

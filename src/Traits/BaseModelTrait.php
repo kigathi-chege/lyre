@@ -161,4 +161,9 @@ trait BaseModelTrait
     {
         $this->customColumns = $columns;
     }
+
+    public function scopeTotal($query)
+    {
+        return $query->count();
+    }
 }

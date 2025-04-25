@@ -42,8 +42,14 @@ class LyreServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        /**
+         * TODO: Kigathi - April 25 2025
+         * For the content package, we might need this:
+         * https://laravel.com/docs/12.x/authorization#manually-registering-policies
+         */
+
         Gate::before(function ($user, $ability) {
-            return $user->hasRole("super-admin") ? true : null;
+            return $user->hasRole(config('lyre.super-admin') ?? 'super-admin') ? true : null;
         });
 
         $this->registerGlobalObserver();
