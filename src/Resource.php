@@ -108,6 +108,21 @@ class Resource extends JsonResource
 
         $baseColumns = array_merge($baseColumns, $custom);
 
+        $columnsToSet = $resource::includeSerializableColumns();
+        $columnsToUnset = $resource::excludeSerializableColumns();
+
+        if (!empty($columnsToSet)) {
+            $baseColumns = array_merge($baseColumns, $columnsToSet);
+        }
+
+        if (!empty($columnsToUnset)) {
+            foreach ($columnsToUnset as $column) {
+                if (($key = array_search($column, $baseColumns)) !== false) {
+                    unset($baseColumns[$key]);
+                }
+            }
+        }
+
         $associatedBaseColumns = array_combine($baseColumns, $baseColumns);
 
         $filteredBaseColumns = [];

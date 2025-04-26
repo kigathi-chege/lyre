@@ -147,6 +147,16 @@ trait BaseModelTrait
         return [];
     }
 
+    public static function excludeSerializableColumns()
+    {
+        return [];
+    }
+
+    public static function includeSerializableColumns()
+    {
+        return [];
+    }
+
     public static function setGlobalCustomColumns(array $columns)
     {
         static::$globalCustomColumns = $columns;
@@ -165,5 +175,18 @@ trait BaseModelTrait
     public function scopeTotal($query)
     {
         return $query->count();
+    }
+
+    // TODO: Kigathi - April 26 2025 - This should only be included if the content package is installed, and the current model supports files
+    public function attachFile($fileId, $single = false)
+    {
+        if ($single) {
+            $this->attachments()->delete();
+        }
+        return $this->attachments()->create([
+            'file_id' => $fileId,
+            'attachable_id' => $this->id,
+            'attachable_type' => static::class,
+        ]);
     }
 }
