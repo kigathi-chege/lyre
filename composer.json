@@ -1,8 +1,8 @@
 {
-  "name": "kigathi-chege/lyre",
+  "name": "lyre/lyre",
   "description": "One minute CRUD with a simple command to create all resources",
   "license": "MIT",
-  "version": "2.0.0",
+  "version": "1.1.19",
   "autoload": {
     "files": [
       "src/helpers/helpers.php"
