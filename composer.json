@@ -1,8 +1,22 @@
 {
   "name": "lyre/lyre",
   "description": "One minute CRUD with a simple command to create all resources",
+  "keywords": [
+    "php",
+    "github",
+    "laravel",
+    "Open Source",
+    "lyre",
+    "crud",
+    "relationships",
+    "resources",
+    "simple",
+    "laravel 10",
+    "laravel 11",
+    "laravel 12"
+  ],
   "license": "MIT",
-  "version": "1.1.20",
+  "version": "1.2.0",
   "autoload": {
     "files": [
       "src/helpers/helpers.php"

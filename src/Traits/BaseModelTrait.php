@@ -29,7 +29,16 @@ trait BaseModelTrait
     {
         $reflection = new \ReflectionClass(static::class);
         $namespace = $reflection->getNamespaceName();
-        $relativeNamespace = trim(str_replace('App\Models', '', $namespace), '\\');
+
+        $namespacePrefixes = config('lyre.path.model', []);
+        $relativeNamespace = '';
+        foreach ($namespacePrefixes as $prefix) {
+            if (!str_contains($namespace, $prefix)) {
+                continue;
+            }
+            $relativeNamespace = trim(str_replace($prefix, '', $namespace), '\\');
+        }
+
         return $relativeNamespace;
     }
 
@@ -59,13 +68,13 @@ trait BaseModelTrait
 
     public static function getResourceConfig()
     {
-        return self::resolveNamespacedClass('App\Http\Resources');
+        return self::resolveNamespacedClass(config('lyre.path.resource'));
     }
 
     public static function getRepositoryConfig()
     {
         return self::resolveNamespacedClass(
-            baseNamespace: 'App\Repositories',
+            baseNamespace: config('lyre.path.repository'),
             suffix: 'Repository'
         );
     }
@@ -73,7 +82,7 @@ trait BaseModelTrait
     public static function getRepositoryInterfaceConfig()
     {
         return self::resolveNamespacedClass(
-            baseNamespace: 'App\Repositories\Interface',
+            baseNamespace: config('lyre.path.contracts'),
             suffix: 'RepositoryInterface',
             checkInterface: true
         );
@@ -82,7 +91,7 @@ trait BaseModelTrait
     public static function getStoreRequestConfig()
     {
         return self::resolveNamespacedClass(
-            baseNamespace: 'App\Http\Requests',
+            baseNamespace: config('lyre.path.request'),
             prefix: 'Store',
             suffix: 'Request'
         );
@@ -91,24 +100,44 @@ trait BaseModelTrait
     public static function getUpdateRequestConfig()
     {
         return self::resolveNamespacedClass(
-            baseNamespace: 'App\Http\Requests',
+            baseNamespace: config('lyre.path.request'),
             prefix: 'Update',
             suffix: 'Request'
         );
     }
 
-    protected static function resolveNamespacedClass(string $baseNamespace, string $prefix = '', string $suffix = '', bool $checkInterface = false): ?string
+    protected static function resolveNamespacedClass(string|array $baseNamespace, string $prefix = '', string $suffix = '', bool $checkInterface = false): ?string
     {
         $class = self::getClassName();
         $relativeNamespace = self::getRelativeNamespace();
-        $fullClass = "\\" . $baseNamespace . ($relativeNamespace ? "\\{$relativeNamespace}" : "") . "\\{$prefix}{$class}{$suffix}";
 
-        if ($checkInterface) {
-            return interface_exists($fullClass) ? $fullClass : null;
+        if (is_array($baseNamespace)) {
+            foreach ($baseNamespace as $namespace) {
+                $fullClass = self::retrieveNamespacedClass($namespace, $relativeNamespace, $class, $prefix, $suffix, $checkInterface);
+                if ($fullClass) break;
+            }
+
+            return $fullClass;
         }
 
-        return class_exists($fullClass) ? $fullClass : null;
+        return self::retrieveNamespacedClass($baseNamespace, $relativeNamespace, $class, $prefix, $suffix, $checkInterface);
     }
+
+    public static function retrieveNamespacedClass(string|array $baseNamespace, string $relativeNamespace = '', string $class = '', string $prefix = '', string $suffix = '', bool $checkInterface = false): ?string
+    {
+        $fullClass = "\\" . trim($baseNamespace, "\\") . ($relativeNamespace ? "\\{$relativeNamespace}" : "") . "\\{$prefix}{$class}{$suffix}";
+
+        if ($checkInterface && interface_exists($fullClass)) {
+            return $fullClass;
+        }
+
+        if (!$checkInterface && class_exists($fullClass)) {
+            return $fullClass;
+        }
+
+        return null;
+    }
+
 
     public static function getModelRelationships(): array
     {

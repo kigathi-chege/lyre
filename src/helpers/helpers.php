@@ -112,10 +112,10 @@ if (! function_exists("set_uuid")) {
 }
 
 if (! function_exists('get_model_classes')) {
-    function get_model_classes()
+    function get_model_classes($modelsPath =  null, $baseNamespace = null)
     {
-        $modelsPath     = app_path("Models");
-        $baseNamespace  = 'App\\Models';
+        $modelsPath     =  $modelsPath ?? app_path("Models");
+        $baseNamespace  =  $baseNamespace ?? 'App\\Models';
         $modelClasses   = [];
 
         if (!file_exists($modelsPath)) {
