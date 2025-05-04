@@ -48,9 +48,13 @@ class LyreServiceProvider extends ServiceProvider
          * https://laravel.com/docs/12.x/authorization#manually-registering-policies
          */
 
-        Gate::before(function ($user, $ability) {
-            return $user->hasRole(config('lyre.super-admin') ?? 'super-admin') ? true : null;
-        });
+        $usingSpatieRoles = in_array(\Spatie\Permission\Traits\HasRoles::class, class_uses(\App\Models\User::class));
+
+        if ($usingSpatieRoles) {
+            Gate::before(function ($user, $ability) {
+                return $user->hasRole(config('lyre.super-admin') ?? 'super-admin') ? true : null;
+            });
+        }
 
         $this->registerGlobalObserver();
 
