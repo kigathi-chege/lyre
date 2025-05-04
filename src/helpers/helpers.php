@@ -111,42 +111,150 @@ if (! function_exists("set_uuid")) {
     }
 }
 
-if (! function_exists('get_model_classes')) {
-    function get_model_classes($modelsPath =  null, $baseNamespace = null)
+if (! function_exists('get_namespace_path')) {
+    function get_namespace_path(string $namespace): ?string
     {
-        $modelsPath     =  $modelsPath ?? app_path("Models");
-        $baseNamespace  =  $baseNamespace ?? 'App\\Models';
-        $modelClasses   = [];
+        // Normalize and trim namespace
+        $namespace = trim($namespace, '\\');
 
-        if (!file_exists($modelsPath)) {
-            return $modelClasses;
-        }
+        // Get Composer's ClassLoader
+        $loader = require base_path('vendor/autoload.php');
 
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($modelsPath),
-            RecursiveIteratorIterator::LEAVES_ONLY
+        // Combine all prefixes (classmap also works if needed)
+        $prefixes = array_merge(
+            $loader->getPrefixesPsr4(), // includes app and vendor
         );
 
-        foreach ($iterator as $file) {
-            if (
-                !$file->isFile() ||
-                $file->getExtension() !== 'php' ||
-                $file->getFilename() === 'BaseModel.php'
-            ) {
+        foreach ($prefixes as $prefix => $dirs) {
+            if (str_starts_with($namespace, rtrim($prefix, '\\'))) {
+                $relativeNamespace = Str::of($namespace)->after($prefix)->replace('\\', DIRECTORY_SEPARATOR);
+
+                foreach ($dirs as $dir) {
+                    $path = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $relativeNamespace;
+                    if (is_dir($path)) {
+                        return $path;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('get_filament_resource_for_model')) {
+    function get_filament_resource_for_model(string $modelClass): ?string
+    {
+        $resources = \Filament\Facades\Filament::getResources(); // Returns all registered resources
+
+        foreach ($resources as $resourceClass) {
+            if (method_exists($resourceClass, 'getModel') && $resourceClass::getModel() === $modelClass) {
+                return $resourceClass;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('get_filament_shield_permissions_for_model')) {
+    function get_filament_shield_permissions_for_model(string $modelClass): mixed
+    {
+        $resourceClass = get_filament_resource_for_model($modelClass);
+        $filamentShieldResources = \BezhanSalleh\FilamentShield\Facades\FilamentShield::getResources();
+
+        foreach ($filamentShieldResources as $entry) {
+            if (($entry['fqcn'] ?? null) === $resourceClass) {
+                $resourceByFQCN = $entry['fqcn'];
+                $permissionPrefixes = \BezhanSalleh\FilamentShield\Support\Utils::getResourcePermissionPrefixes($resourceByFQCN);
+                $permissions = collect();
+                collect($permissionPrefixes)
+                    ->each(function ($prefix) use ($entry, $permissions) {
+                        $permissions->push($prefix . '_' . $entry['resource']);
+                    });
+                return $permissions;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('get_model_classes')) {
+    function get_filament_shield_permission_by_prefix($modelClass, $prefix)
+    {
+        $resourceClass = get_filament_resource_for_model($modelClass);
+        $filamentShieldResources = \BezhanSalleh\FilamentShield\Facades\FilamentShield::getResources();
+        $entry = collect($filamentShieldResources)->first(fn($entry) => $entry['fqcn'] === $resourceClass);
+        $resourceByFQCN = $entry['fqcn'];
+        $permissionPrefixes = \BezhanSalleh\FilamentShield\Support\Utils::getResourcePermissionPrefixes($resourceByFQCN);
+        if (in_array($prefix, $permissionPrefixes)) {
+            return $prefix . '_' . $entry['resource'];
+        }
+
+        throw CommonException::fromMessage('Permission not found');
+    }
+}
+
+if (! function_exists('get_model_permission_by_prefix')) {
+    function get_model_permission_by_prefix(string $modelClass, string $prefix)
+    {
+        if (config('lyre.filament-shield')) {
+            $prefix = str_replace('-', '_', $prefix);
+            return get_filament_shield_permission_by_prefix($modelClass, $prefix);
+        } else {
+            $tableName = (new ($modelClass))->getTable();
+            $prefix = str_replace('_', '-', $prefix);
+            return "{$prefix}-{$tableName}";
+        }
+
+        throw CommonException::fromMessage('Permission not found');
+    }
+}
+
+if (! function_exists('get_model_classes')) {
+    function get_model_classes(): array
+    {
+        $namespaces = config('lyre.path.model', ['App\\Models']);
+        $modelClasses = [];
+
+        foreach ($namespaces as $namespace) {
+            $namespace = trim($namespace, '\\');
+            $namespacePath = get_namespace_path($namespace);
+
+
+            if (!$namespacePath || !file_exists($namespacePath)) {
                 continue;
             }
 
-            // Convert file path to class namespace
-            $relativePath = str_replace($modelsPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
-            $classPath = str_replace(
-                [DIRECTORY_SEPARATOR, '.php'],
-                ['\\', ''],
-                $relativePath
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($namespacePath),
+                RecursiveIteratorIterator::LEAVES_ONLY
             );
 
-            $className = $baseNamespace . '\\' . $classPath;
-            $modelName = class_basename($className);
-            $modelClasses[$modelName] = $className;
+            foreach ($iterator as $file) {
+                if (
+                    !$file->isFile() ||
+                    $file->getExtension() !== 'php' ||
+                    $file->getFilename() === 'BaseModel.php'
+                ) {
+                    continue;
+                }
+
+                $relativePath = str_replace($namespacePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+
+                $classPath = str_replace(
+                    [DIRECTORY_SEPARATOR, '.php'],
+                    ['\\', ''],
+                    $relativePath
+                );
+
+                $fullClass = $namespace . '\\' . $classPath;
+
+                if (class_exists($fullClass)) {
+                    $modelClasses[class_basename($fullClass)] = $fullClass;
+                }
+            }
         }
 
         return $modelClasses;
@@ -340,6 +448,22 @@ if (! function_exists("generate_basic_model_permissions")) {
     }
 }
 
+if (! function_exists("get_permissions_from_types")) {
+    function get_permissions_from_types($typesToInclude)
+    {
+        $permissions = [];
+        $allPermissions = generate_basic_model_permissions();
+        foreach ($typesToInclude as $type) {
+            if (is_array($type)) {
+                $permissions = array_merge($permissions, $type);
+            } elseif (is_string($type)) {
+                $permissions = array_merge($permissions, $allPermissions[$type]);
+            }
+        }
+        return $permissions;
+    }
+}
+
 if (! function_exists("generate_basic_model_response_codes")) {
     function generate_basic_model_response_codes()
     {
@@ -511,10 +635,10 @@ if (! function_exists('retrieve_json_contents')) {
             $jsonData = file_get_contents($filePath);
             $data     = json_decode($jsonData, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Error parsing JSON file: ' . json_last_error_msg());
+                throw CommonException::fromMessage('Error parsing JSON file: ' . json_last_error_msg());
             }
         } else {
-            throw new Exception('JSON file not found.');
+            throw CommonException::fromMessage('JSON file not found.');
         }
         return $data;
     }

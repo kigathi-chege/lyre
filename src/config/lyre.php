@@ -55,4 +55,9 @@ return [
         'resource'      => ['App\Http\Resources', 'Lyre\Content\Http\Resources'],
         'request'      => ['App\Http\Requests', 'Lyre\Content\Http\Requests'],
     ],
+
+    /**
+     * Use filament shield permissions
+     */
+    'filament-shield' => false,
 ];

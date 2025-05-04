@@ -20,41 +20,49 @@ class Policy
 
     public function viewAny(?User $user): bool
     {
-        return $this->usingSpatieRoles ? ($user ? $user->can("view-any-{$this->table}") : false) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'view-any');
+        return $this->usingSpatieRoles ? ($user ? $user->can($permission) : false) : true;
     }
 
     public function view(?User $user, $model): bool
     {
-        return $this->usingSpatieRoles ? ($user ? $user->can("view-{$this->table}") : false) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'view');
+        return $this->usingSpatieRoles ? ($user ? $user->can($permission) : false) : true;
     }
 
     public function create(?User $user): bool
     {
-        return $this->usingSpatieRoles ? ($user ? $user->can("create-{$this->table}") : false) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'create');
+        return $this->usingSpatieRoles ? ($user ? $user->can($permission) : false) : true;
     }
 
     public function update(User $user, $model): bool
     {
-        return $this->usingSpatieRoles ? ($user->can("update-{$this->table}")) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'update');
+        return $this->usingSpatieRoles ? ($user->can($permission)) : true;
     }
 
     public function bulkUpdate(User $user): bool
     {
-        return $this->usingSpatieRoles ? ($user->can("bulk-update-{$this->table}")) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'update');
+        return $this->usingSpatieRoles ? ($user->can($permission)) : true;
     }
 
     public function delete(User $user, $model): bool
     {
-        return $this->usingSpatieRoles ? ($user->can("delete-{$this->table}")) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'delete');
+        return $this->usingSpatieRoles ? ($user->can($permission)) : true;
     }
 
     public function restore(User $user, $model): bool
     {
-        return $this->usingSpatieRoles ? ($user->can("restore-{$this->table}")) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'restore');
+        return $this->usingSpatieRoles ? ($user->can($permission)) : true;
     }
 
     public function forceDelete(User $user, $model): bool
     {
-        return $this->usingSpatieRoles ? ($user->can("force-delete-{$this->table}")) : true;
+        $permission = get_model_permission_by_prefix(get_class($this->model), 'force-delete');
+        return $this->usingSpatieRoles ? ($user->can($permission)) : true;
     }
 }
