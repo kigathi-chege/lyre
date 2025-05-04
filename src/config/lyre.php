@@ -44,4 +44,15 @@ return [
      * Default password
      */
     'password'      => 'P@ssword1',
+
+    /**
+     * Model config discovery paths
+     */
+    'path'      => [
+        'model' => ['App\Models', 'Lyre\Content\Models'],
+        'repository' => ['App\Repositories', 'Lyre\Content\Repositories'],
+        'contracts'      => ['App\Repositories\Interface', 'Lyre\Content\Repositories\Contracts'],
+        'resource'      => ['App\Http\Resources', 'Lyre\Content\Http\Resources'],
+        'request'      => ['App\Http\Requests', 'Lyre\Content\Http\Requests'],
+    ],
 ];
