@@ -142,6 +142,46 @@ if (! function_exists('get_namespace_path')) {
     }
 }
 
+if (! function_exists('get_filament_resources_for_namespace')) {
+    function get_filament_resources_for_namespace(string $resourceNamespace): array
+    {
+        $loader = require base_path('vendor/autoload.php');
+        $prefixesPsr4 = $loader->getPrefixesPsr4();
+
+        $resources = collect([]);
+
+        foreach ($prefixesPsr4 as $prefix => $paths) {
+            if (str_starts_with($resourceNamespace, $prefix)) {
+                // Remove the base namespace part
+                $relative = str_replace('\\', '/', substr($resourceNamespace, strlen($prefix)));
+                $resourcePath = realpath($paths[0] . '/' . $relative);
+
+                if (!$resourcePath) {
+                    continue;
+                }
+
+                $found = collect((new \Symfony\Component\Finder\Finder)->files()->in($resourcePath)->name('*.php'))
+                    ->map(function ($file) use ($resourceNamespace, $resourcePath) {
+                        // Get the relative path from resourcePath
+                        $relativePath = str_replace('.php', '', $file->getRelativePathname());
+
+                        // Convert slashes to namespace separators
+                        $class = $resourceNamespace . '\\' . str_replace('/', '\\', $relativePath);
+
+                        return class_exists($class) && is_subclass_of($class, \Filament\Resources\Resource::class) ? $class : null;
+                    })
+                    ->filter()
+                    ->values()
+                    ->toArray();
+
+                $resources = $resources->concat($found);
+            }
+        }
+
+        return $resources->values()->toArray();
+    }
+}
+
 if (! function_exists('get_filament_resource_for_model')) {
     function get_filament_resource_for_model(string $modelClass): ?string
     {
