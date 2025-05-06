@@ -26,6 +26,7 @@ class Repository implements RepositoryInterface
     protected $silent = false;
     protected $withInactive = false;
     protected $limit = false;
+    protected $offset = false;
     protected $orderByColumn = null;
     protected $orderByOrder = 'desc';
     protected $startsWith = null;
@@ -54,6 +55,9 @@ class Repository implements RepositoryInterface
         $query = $this->order($query);
         $query = $this->applyStartsWith($query);
         $query = $this->applyWithCount($query);
+        if ($this->offset) {
+            $query->offset($this->offset);
+        }
         $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
         return $this->collectResource($results, $this->limit ? false : $paginate && $this->paginate);
     }
@@ -168,6 +172,12 @@ class Repository implements RepositoryInterface
     public function limit(int $limit)
     {
         $this->limit = $limit;
+        return $this;
+    }
+
+    public function offset(int $offset)
+    {
+        $this->offset = $offset;
         return $this;
     }
 

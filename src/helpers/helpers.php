@@ -145,40 +145,26 @@ if (! function_exists('get_namespace_path')) {
 if (! function_exists('get_filament_resources_for_namespace')) {
     function get_filament_resources_for_namespace(string $resourceNamespace): array
     {
-        $loader = require base_path('vendor/autoload.php');
-        $prefixesPsr4 = $loader->getPrefixesPsr4();
+        $resourcePath = get_namespace_path($resourceNamespace);
 
-        $resources = collect([]);
-
-        foreach ($prefixesPsr4 as $prefix => $paths) {
-            if (str_starts_with($resourceNamespace, $prefix)) {
-                // Remove the base namespace part
-                $relative = str_replace('\\', '/', substr($resourceNamespace, strlen($prefix)));
-                $resourcePath = realpath($paths[0] . '/' . $relative);
-
-                if (!$resourcePath) {
-                    continue;
-                }
-
-                $found = collect((new \Symfony\Component\Finder\Finder)->files()->in($resourcePath)->name('*.php'))
-                    ->map(function ($file) use ($resourceNamespace, $resourcePath) {
-                        // Get the relative path from resourcePath
-                        $relativePath = str_replace('.php', '', $file->getRelativePathname());
-
-                        // Convert slashes to namespace separators
-                        $class = $resourceNamespace . '\\' . str_replace('/', '\\', $relativePath);
-
-                        return class_exists($class) && is_subclass_of($class, \Filament\Resources\Resource::class) ? $class : null;
-                    })
-                    ->filter()
-                    ->values()
-                    ->toArray();
-
-                $resources = $resources->concat($found);
-            }
+        if (!$resourcePath) {
+            throw CommonException::fromMessage("Resource namespace not found");
         }
 
-        return $resources->values()->toArray();
+        $resources = collect((new \Symfony\Component\Finder\Finder)->files()->in($resourcePath)->name('*.php'))
+            ->map(function ($file) use ($resourceNamespace, $resourcePath) {
+
+                $relativePath = str_replace('.php', '', $file->getRelativePathname());
+
+                $class = $resourceNamespace . '\\' . str_replace('/', '\\', $relativePath);
+
+                return class_exists($class) && is_subclass_of($class, \Filament\Resources\Resource::class) ? $class : null;
+            })
+            ->filter()
+            ->values()
+            ->toArray();
+
+        return $resources;
     }
 }
 
@@ -220,7 +206,7 @@ if (! function_exists('get_filament_shield_permissions_for_model')) {
     }
 }
 
-if (! function_exists('get_model_classes')) {
+if (! function_exists('get_filament_shield_permission_by_prefix')) {
     function get_filament_shield_permission_by_prefix($modelClass, $prefix)
     {
         $resourceClass = get_filament_resource_for_model($modelClass);
@@ -253,15 +239,14 @@ if (! function_exists('get_model_permission_by_prefix')) {
 }
 
 if (! function_exists('get_model_classes')) {
-    function get_model_classes(): array
+    function get_model_classes($baseNamespace = null)
     {
-        $namespaces = config('lyre.path.model', ['App\\Models']);
-        $modelClasses = [];
+        $namespaces  =  $baseNamespace ? [$baseNamespace] : config('lyre.path.model', ['App\\Models']);
+        $modelClasses   = [];
 
         foreach ($namespaces as $namespace) {
             $namespace = trim($namespace, '\\');
             $namespacePath = get_namespace_path($namespace);
-
 
             if (!$namespacePath || !file_exists($namespacePath)) {
                 continue;
@@ -300,7 +285,6 @@ if (! function_exists('get_model_classes')) {
         return $modelClasses;
     }
 }
-
 
 if (! function_exists('get_model_instance')) {
     function get_model_instance($model)
@@ -693,5 +677,98 @@ if (! function_exists('clean_str')) {
             $string = strtolower($string); // Converts string to lowercase.
         }
         return $string;
+    }
+}
+
+
+function register_global_observers(string $modelsBaseNamespace)
+{
+    $MODELS        = collect(get_model_classes($modelsBaseNamespace));
+    $observersPath = app_path("Observers");
+    $baseNamespace = "App\\Observers";
+
+    if (file_exists($observersPath)) {
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($observersPath),
+            RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($iterator as $file) {
+            if (
+                !$file->isFile() ||
+                $file->getExtension() !== 'php' ||
+                $file->getFilename() === 'BaseObserver.php'
+            ) {
+                continue;
+            }
+
+            $relativePath = str_replace($observersPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $classPath = str_replace(
+                [DIRECTORY_SEPARATOR, '.php'],
+                ['\\', ''],
+                $relativePath
+            );
+
+            $observerClass = $baseNamespace . '\\' . $classPath;
+            $observerName  = class_basename($observerClass);
+            $modelName     = str_replace('Observer', '', $observerName);
+
+            if (isset($MODELS[$modelName]) && class_exists($observerClass)) {
+                $modelClass = $MODELS[$modelName];
+                $modelClass::observe($observerClass);
+                $MODELS->forget($modelName);
+            }
+        }
+    }
+
+    foreach ($MODELS as $MODEL) {
+        $MODEL::observe(\Lyre\Observer::class);
+    }
+}
+
+
+function register_repositories($app, string $repositoriesBaseNamespace, string $contractsBaseNamespace)
+{
+    $repositoriesPath = get_namespace_path($repositoriesBaseNamespace);
+    $contractsPath = get_namespace_path($contractsBaseNamespace);
+
+    if (! file_exists($repositoriesPath)) {
+        \Illuminate\Support\Facades\File::makeDirectory($repositoriesPath);
+    }
+
+    if (! file_exists($contractsPath)) {
+        \Illuminate\Support\Facades\File::makeDirectory($contractsPath);
+    }
+
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($repositoriesPath)
+    );
+
+    foreach ($iterator as $file) {
+        if (!$file->isFile()) continue;
+
+        $fileName = $file->getFilename();
+
+        // TODO: Kigathi - April 21 2025 - Allow overriding the Repository.php by introducing a BaseRepository.php file at the repositoryPath
+        if (!Str::endsWith($fileName, 'Repository.php') || $fileName === 'BaseRepository.php') {
+            continue;
+        }
+
+        // Get relative path from the Repositories directory
+        $relativePath = Str::after($file->getPathname(), $repositoriesPath . DIRECTORY_SEPARATOR);
+        $namespacePath = str_replace(['/', '\\'], '\\', Str::replaceLast('.php', '', $relativePath));
+
+        // Interface path must match the same relative structure
+        $interfaceNamespace = $contractsBaseNamespace . '\\' . $namespacePath . 'Interface';
+        $implementationNamespace = $repositoriesBaseNamespace . '\\' . $namespacePath;
+
+        // Interface file must exist
+        $interfaceFilePath = $contractsPath . DIRECTORY_SEPARATOR . Str::replaceLast('Repository.php', 'RepositoryInterface.php', $relativePath);
+
+        if (file_exists($interfaceFilePath)) {
+            $app->bind($interfaceNamespace, function ($app) use ($implementationNamespace) {
+                return $app->make($implementationNamespace);
+            });
+        }
     }
 }
