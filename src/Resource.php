@@ -108,8 +108,8 @@ class Resource extends JsonResource
 
         $baseColumns = array_merge($baseColumns, $custom);
 
-        $columnsToSet = $resource::includeSerializableColumns();
-        $columnsToUnset = $resource::excludeSerializableColumns();
+        $columnsToSet = $resource->getIncludedSerializableColumns();
+        $columnsToUnset = $resource->getExcludedSerializableColumns();
 
         if (!empty($columnsToSet)) {
             $baseColumns = array_merge($baseColumns, $columnsToSet);

@@ -12,6 +12,8 @@ trait BaseModelTrait
 
     protected $customColumns = [];
     protected static $globalCustomColumns = [];
+    protected static $excludedSerializableColumns = [];
+    protected static $includedSerializableColumns = [];
 
     public function getFillableAttributes()
     {
@@ -176,14 +178,44 @@ trait BaseModelTrait
         return [];
     }
 
-    public static function excludeSerializableColumns()
+    public static function setExcludedSerializableColumns($columns = [])
     {
-        return [];
+        static::$excludedSerializableColumns = array_merge(static::$excludedSerializableColumns, [static::class => $columns]);
     }
 
-    public static function includeSerializableColumns()
+    public function getExcludedSerializableColumns()
     {
-        return [];
+        $filtered = array_filter(static::$excludedSerializableColumns, function ($_, $key) {
+            return !is_int($key);
+        }, ARRAY_FILTER_USE_BOTH);
+
+        $currentExclusions = [];
+
+        if (count($filtered) > 0) {
+            $currentExclusions = collect($filtered)->filter(fn($_, $key) =>  $key == $this::class)->flatten()->values()->toArray();
+        }
+
+        return array_merge($currentExclusions, $this->getHidden());
+    }
+
+    public static function setIncludedSerializableColumns($columns = [])
+    {
+        static::$includedSerializableColumns = array_merge(static::$includedSerializableColumns, [static::class => $columns]);
+    }
+
+    public function getIncludedSerializableColumns()
+    {
+        $filtered = array_filter(static::$includedSerializableColumns, function ($_, $key) {
+            return !is_int($key);
+        }, ARRAY_FILTER_USE_BOTH);
+
+        $currentInclusions = [];
+
+        if (count($filtered) > 0) {
+            $currentInclusions = collect($filtered)->filter(fn($_, $key) =>  $key == $this::class)->flatten()->values()->toArray();
+        }
+
+        return array_merge($currentInclusions, $this->getVisible());
     }
 
     public static function setGlobalCustomColumns(array $columns)
@@ -204,5 +236,10 @@ trait BaseModelTrait
     public function scopeTotal($query)
     {
         return $query->count();
+    }
+
+    public static function resolveRepository()
+    {
+        return app(ltrim(static::getRepositoryInterfaceConfig(), '\\'));
     }
 }
