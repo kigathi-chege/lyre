@@ -681,15 +681,22 @@ if (! function_exists('clean_str')) {
 }
 
 
-function register_global_observers(string $modelsBaseNamespace)
+function register_global_observers(string $modelsBaseNamespace, ?string $observersNamespace = null)
 {
-    $MODELS        = collect(get_model_classes($modelsBaseNamespace));
-    $observersPath = app_path("Observers");
-    $baseNamespace = "App\\Observers";
+    $MODELS = collect(get_model_classes($modelsBaseNamespace));
 
-    if (file_exists($observersPath)) {
+    $derivedNamespace = $observersNamespace ?? str_replace('Models', 'Observers', $modelsBaseNamespace);
+    $derivedPath = get_namespace_path($derivedNamespace);
+
+    $defaultNamespace = "App\\Observers";
+    $defaultPath = app_path("Observers");
+
+    $activeNamespace = file_exists($derivedPath) ? $derivedNamespace : $defaultNamespace;
+    $activePath = file_exists($derivedPath) ? $derivedPath : $defaultPath;
+
+    if (file_exists($activePath)) {
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($observersPath),
+            new RecursiveDirectoryIterator($activePath),
             RecursiveIteratorIterator::LEAVES_ONLY
         );
 
@@ -702,14 +709,14 @@ function register_global_observers(string $modelsBaseNamespace)
                 continue;
             }
 
-            $relativePath = str_replace($observersPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+            $relativePath = str_replace($activePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
             $classPath = str_replace(
                 [DIRECTORY_SEPARATOR, '.php'],
                 ['\\', ''],
                 $relativePath
             );
 
-            $observerClass = $baseNamespace . '\\' . $classPath;
+            $observerClass = $activeNamespace . '\\' . $classPath;
             $observerName  = class_basename($observerClass);
             $modelName     = str_replace('Observer', '', $observerName);
 

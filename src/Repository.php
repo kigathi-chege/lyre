@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Schema;
 use Lyre\Exceptions\CommonException;
 use Lyre\Facades\Lyre;
 use Lyre\Interface\RepositoryInterface;
+use Illuminate\Support\Facades\Config;
 
 class Repository implements RepositoryInterface
 {
@@ -31,6 +32,8 @@ class Repository implements RepositoryInterface
     protected $orderByOrder = 'desc';
     protected $startsWith = null;
     protected $withCount = [];
+    protected $whereNull = [];
+    protected $doesntHave = [];
 
     public function __construct($model)
     {
@@ -39,7 +42,7 @@ class Repository implements RepositoryInterface
         $this->resource = Lyre::getModelResource($this->model);
     }
 
-    public function all($filterCallback = null, $paginate = true)
+    public function all(array | null $callbacks = [], $paginate = true)
     {
         $query = $this->model->query();
         $query = $this->prepareQuery($query);
@@ -47,14 +50,14 @@ class Repository implements RepositoryInterface
         $query = $this->applyColumnFilters($query);
         $query = $this->applyRangeFilters($query);
         $query = $this->applyRelationFilters($query);
-        if ($filterCallback !== null && is_callable($filterCallback)) {
-            $query = call_user_func($filterCallback, $query);
-        }
+        $query = $this->applyCallbacks($query, $callbacks);
         $query = $this->performOperations($query);
         $query = $this->search($query);
         $query = $this->order($query);
         $query = $this->applyStartsWith($query);
         $query = $this->applyWithCount($query);
+        $query = $this->applyWhereNull($query);
+        $query = $this->applyDoesntHave($query);
         if ($this->offset) {
             $query->offset($this->offset);
         }
@@ -67,15 +70,13 @@ class Repository implements RepositoryInterface
         return $this->model->onlyTrashed()->get();
     }
 
-    public function find($arguments, $filterCallback = null)
+    public function find($arguments, array | null $callbacks = [])
     {
         $query = $this->model->query();
         $query = $this->prepareQuery($query);
         $query = $this->filter($query, $arguments);
         $query = $this->linkRelations($query);
-        if ($filterCallback !== null && is_callable($filterCallback)) {
-            $query = call_user_func($filterCallback, $query);
-        }
+        $query = $this->applyCallbacks($query, $callbacks);
         $query = $this->performOperations($query);
         $resource = $query->first();
         if (!$resource) {
@@ -85,6 +86,19 @@ class Repository implements RepositoryInterface
             throw CommonException::fromMessage("{$this->model->getTable()} not found");
         }
         return $this->resource ? new $this->resource($resource) : $query->first();
+    }
+
+    public function applyCallbacks($query, array | null $callbacks = [])
+    {
+        if (!$callbacks) {
+            return $query;
+        }
+        foreach ($callbacks as $callback) {
+            if (is_callable($callback)) {
+                $query = call_user_func($callback, $query);
+            }
+        }
+        return $query;
     }
 
     public function latest()
@@ -219,6 +233,18 @@ class Repository implements RepositoryInterface
     public function silent()
     {
         $this->silent = true;
+        return $this;
+    }
+
+    public function whereNull(array $columns)
+    {
+        $this->whereNull += $columns;
+        return $this;
+    }
+
+    public function doesntHave(array $relationships)
+    {
+        $this->doesntHave += $relationships;
         return $this;
     }
 
@@ -374,6 +400,26 @@ class Repository implements RepositoryInterface
         return $query;
     }
 
+    public function applyWhereNull($query)
+    {
+        if (!empty($this->whereNull)) {
+            foreach ($this->whereNull as $column) {
+                $query = $query->orWhereNull($column);
+            }
+        }
+        return $query;
+    }
+
+    public function applyDoesntHave($query)
+    {
+        if (!empty($this->doesntHave)) {
+            foreach ($this->doesntHave as $relationship) {
+                $query = $query->whereDoesntHave($relationship);
+            }
+        }
+        return $query;
+    }
+
     public function sanitizeArguments($arguments)
     {
         $modelFillables = $this->model->getFillableAttributes();
@@ -417,10 +463,14 @@ class Repository implements RepositoryInterface
          * Added this line because we need to skip prepare several times
          * This is especially necessary if we are finding to manipulate, and not to return
          * All `find` requests and `all` requests hit this method
+         * 
+         * Kigathi - May 13 2025
+         * This line was commented out on April 15th, 2024 5:27 AM
+         * Uncommented this line because it needed to be relevant again
          */
-        // if (!(Config::get('request-model') && Config::get('request-model')->getClassName() == $this->model->getClassName()) || Config::get('skip-prepare')) {
-        //     return $query;
-        // }
+        if (!(Config::get('request-model') && Config::get('request-model')->getClassName() == $this->model->getClassName()) || Config::get('skip-prepare')) {
+            return $query;
+        }
         $originQuery = clone $query;
         if (!$this->withInactive) {
             $query = $this->filterActive($query);
@@ -603,6 +653,16 @@ class Repository implements RepositoryInterface
         if (array_key_exists('withcount', $requestQueries) && $requestQueries['withcount']) {
             $withCount = explode(',', $requestQueries['withcount']);
             $this->withCount($withCount);
+        }
+
+        if (array_key_exists('wherenull', $requestQueries) && $requestQueries['wherenull']) {
+            $whereNull = explode(',', $requestQueries['wherenull']);
+            $this->whereNull($whereNull);
+        }
+
+        if (array_key_exists('doesnthave', $requestQueries) && $requestQueries['doesnthave']) {
+            $doesntHave = explode(',', $requestQueries['doesnthave']);
+            $this->doesntHave($doesntHave);
         }
 
         // TODO: Kigathi - September 11 2024 - Confirm that this code yields the expected results.

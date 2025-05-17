@@ -4,6 +4,8 @@ namespace Lyre\Traits;
 
 trait BaseModelTrait
 {
+    use CanIncludeColumns;
+
     const ID_COLUMN = 'id';
     const NAME_COLUMN = 'name';
     const STATUS_CONFIG = 'constant.status';
@@ -12,8 +14,6 @@ trait BaseModelTrait
 
     protected $customColumns = [];
     protected static $globalCustomColumns = [];
-    protected static $excludedSerializableColumns = [];
-    protected static $includedSerializableColumns = [];
 
     public function getFillableAttributes()
     {
@@ -176,46 +176,6 @@ trait BaseModelTrait
     public function searcheableRelations()
     {
         return [];
-    }
-
-    public static function setExcludedSerializableColumns($columns = [])
-    {
-        static::$excludedSerializableColumns = array_merge(static::$excludedSerializableColumns, [static::class => $columns]);
-    }
-
-    public function getExcludedSerializableColumns()
-    {
-        $filtered = array_filter(static::$excludedSerializableColumns, function ($_, $key) {
-            return !is_int($key);
-        }, ARRAY_FILTER_USE_BOTH);
-
-        $currentExclusions = [];
-
-        if (count($filtered) > 0) {
-            $currentExclusions = collect($filtered)->filter(fn($_, $key) =>  $key == $this::class)->flatten()->values()->toArray();
-        }
-
-        return array_merge($currentExclusions, $this->getHidden());
-    }
-
-    public static function setIncludedSerializableColumns($columns = [])
-    {
-        static::$includedSerializableColumns = array_merge(static::$includedSerializableColumns, [static::class => $columns]);
-    }
-
-    public function getIncludedSerializableColumns()
-    {
-        $filtered = array_filter(static::$includedSerializableColumns, function ($_, $key) {
-            return !is_int($key);
-        }, ARRAY_FILTER_USE_BOTH);
-
-        $currentInclusions = [];
-
-        if (count($filtered) > 0) {
-            $currentInclusions = collect($filtered)->filter(fn($_, $key) =>  $key == $this::class)->flatten()->values()->toArray();
-        }
-
-        return array_merge($currentInclusions, $this->getVisible());
     }
 
     public static function setGlobalCustomColumns(array $columns)

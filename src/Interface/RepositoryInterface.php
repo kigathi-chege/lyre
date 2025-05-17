@@ -4,9 +4,9 @@ namespace Lyre\Interface;
 
 interface RepositoryInterface
 {
-    public function all($filterCallback = null, $paginate = true);
+    public function all(array | null $callbacks = [], $paginate = true);
     public function trashed();
-    public function find($arguments, $filterCallback = null);
+    public function find($arguments, array | null $callbacks = []);
     public function latest();
     public function limit(int $limit);
     public function create(array $data);
