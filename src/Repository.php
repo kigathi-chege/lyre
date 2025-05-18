@@ -463,7 +463,7 @@ class Repository implements RepositoryInterface
          * Added this line because we need to skip prepare several times
          * This is especially necessary if we are finding to manipulate, and not to return
          * All `find` requests and `all` requests hit this method
-         * 
+         *
          * Kigathi - May 13 2025
          * This line was commented out on April 15th, 2024 5:27 AM
          * Uncommented this line because it needed to be relevant again
@@ -710,17 +710,18 @@ class Repository implements RepositoryInterface
 
     public function filterActive($query)
     {
-        if (Schema::hasColumn($this->model->getTable(), 'status')) {
-            /**
-             * TODO: Kigathi - 18:00 July 6 2024 - Add a status config variable in lyre.php
-             * This provision should also allow users to choose whether or not to order by desc default, as well as whether to filter by active status by default
-             */
-            $defaultConfigPath = config('lyre.status-config');
-            $statusConfig = isset($this->model->generateConfig()['status']) ? config($this->model->generateConfig()['status']) : config($defaultConfigPath);
-            if (!$statusConfig || in_array("active", $statusConfig) || array_key_exists('active', $statusConfig)) {
-                $query = $query->where($this->model->getTable() . '.status', in_array("active", $statusConfig) ? 'active' : get_status_code('active', $this->model));
-            }
-        }
+        // TODO: Kigathi - May 18 2025 - This function a bit outdated because it assumes that the status column must contain an `active` or have a configuration detailing this, an easier method can be achieved
+        // if (Schema::hasColumn($this->model->getTable(), 'status')) {
+        //     /**
+        //      * TODO: Kigathi - 18:00 July 6 2024 - Add a status config variable in lyre.php
+        //      * This provision should also allow users to choose whether or not to order by desc default, as well as whether to filter by active status by default
+        //      */
+        //     $defaultConfigPath = config('lyre.status-config');
+        //     $statusConfig = isset($this->model->generateConfig()['status']) ? config($this->model->generateConfig()['status']) : config($defaultConfigPath);
+        //     if (!$statusConfig || in_array("active", $statusConfig) || array_key_exists('active', $statusConfig)) {
+        //         $query = $query->where($this->model->getTable() . '.status', in_array("active", $statusConfig) ? 'active' : get_status_code('active', $this->model));
+        //     }
+        // }
         return $query;
     }
 
