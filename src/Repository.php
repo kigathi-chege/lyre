@@ -536,6 +536,10 @@ class Repository implements RepositoryInterface
             $this->limit((int) $requestQueries['limit']);
         }
 
+        if (array_key_exists('offset', $requestQueries) && $requestQueries['offset'] && is_numeric($requestQueries['offset'])) {
+            $this->offset((int) $requestQueries['offset']);
+        }
+
         /**
          * Expected query string format for relation:
          * relation=relation,value,relation1,value1,relation2,value2,relation3,value3,etc
