@@ -33,25 +33,42 @@ if (! function_exists("parse_validation_error_response")) {
 }
 
 if (! function_exists("curate_response")) {
-    function curate_response($status, $message, $response, $code = 200, $trace = false)
-    {
-        $responseData = [
+    function curate_response(
+        $status,
+        $message,
+        $response,
+        $code = 200,
+        $trace = false,
+        array $extra = [],
+        array $headers = [],
+        bool $forgetGuestUuid = false
+    ) {
+        $responseData = array_merge([
             "status"   => $status,
             "message"  => $message,
             "response" => $response,
             "code"     => $code,
-        ];
+        ], $extra);
+
         if ($trace !== false && env("APP_DEBUG", false)) {
             $responseData['trace'] = $trace;
         }
-        return response()->json(
-            $responseData,
-            $status
-                ? 200
-                : (isset(Response::$statusTexts[$code])
-                    ? $code
-                    : ($code == 0 ? Response::HTTP_INTERNAL_SERVER_ERROR : Response::HTTP_EXPECTATION_FAILED))
-        );
+
+        $httpCode = $status
+            ? 200
+            : (isset(Response::$statusTexts[$code])
+                ? $code
+                : ($code == 0
+                    ? Response::HTTP_INTERNAL_SERVER_ERROR
+                    : Response::HTTP_EXPECTATION_FAILED));
+
+        $jsonResponse = response()->json($responseData, $httpCode, $headers);
+
+        if ($forgetGuestUuid) {
+            $jsonResponse->withCookie(\Illuminate\Support\Facades\Cookie::forget('guest_uuid'));
+        }
+
+        return $jsonResponse;
     }
 }
 
@@ -455,17 +472,17 @@ if (! function_exists("generate_basic_model_permissions")) {
     function generate_basic_model_permissions()
     {
         $permissions = [];
-        $models      = get_model_classes();
+        $models = get_model_classes();
         foreach ($models as $model) {
-            $name               = (new $model())->getTable();
+            $name = (new $model)->getTable();
             $permissions[$name] = [
-                "view-any-{$name}",
-                "view-{$name}",
-                "create-{$name}",
-                "update-{$name}",
-                "delete-{$name}",
-                "restore-{$name}",
-                "force-delete-{$name}",
+                get_model_permission_by_prefix($model, 'view-any'),
+                get_model_permission_by_prefix($model, 'view'),
+                get_model_permission_by_prefix($model, 'create'),
+                get_model_permission_by_prefix($model, 'update'),
+                get_model_permission_by_prefix($model, 'delete'),
+                get_model_permission_by_prefix($model, 'restore'),
+                get_model_permission_by_prefix($model, 'force-delete'),
             ];
         }
         return $permissions;
@@ -477,14 +494,29 @@ if (! function_exists("get_permissions_from_types")) {
     {
         $permissions = [];
         $allPermissions = generate_basic_model_permissions();
-        foreach ($typesToInclude as $type) {
+        foreach ($typesToInclude as $key => $type) {
             if (is_array($type)) {
-                $permissions = array_merge($permissions, $type);
+                $typeModel = get_model_class_from_table_name($key);
+                $typePermissions = [];
+                foreach ($type as $permissionPrefix) {
+                    $typePermissions[] = get_model_permission_by_prefix($typeModel, $permissionPrefix);
+                }
+                $permissions = array_merge($permissions, $typePermissions);
             } elseif (is_string($type)) {
                 $permissions = array_merge($permissions, $allPermissions[$type]);
             }
         }
         return $permissions;
+    }
+}
+
+function get_model_class_from_table_name($table_name)
+{
+    $allModels = get_model_classes();
+    foreach ($allModels as $model) {
+        if ((new $model)->getTable() === $table_name) {
+            return $model;
+        }
     }
 }
 
@@ -680,102 +712,104 @@ if (! function_exists('clean_str')) {
     }
 }
 
+if (! function_exists('register_global_observers')) {
+    function register_global_observers(string $modelsBaseNamespace, ?string $observersNamespace = null)
+    {
+        $MODELS = collect(get_model_classes($modelsBaseNamespace));
 
-function register_global_observers(string $modelsBaseNamespace, ?string $observersNamespace = null)
-{
-    $MODELS = collect(get_model_classes($modelsBaseNamespace));
+        $derivedNamespace = $observersNamespace ?? str_replace('Models', 'Observers', $modelsBaseNamespace);
+        $derivedPath = get_namespace_path($derivedNamespace);
 
-    $derivedNamespace = $observersNamespace ?? str_replace('Models', 'Observers', $modelsBaseNamespace);
-    $derivedPath = get_namespace_path($derivedNamespace);
+        $defaultNamespace = "App\\Observers";
+        $defaultPath = app_path("Observers");
 
-    $defaultNamespace = "App\\Observers";
-    $defaultPath = app_path("Observers");
+        $activeNamespace = file_exists($derivedPath) ? $derivedNamespace : $defaultNamespace;
+        $activePath = file_exists($derivedPath) ? $derivedPath : $defaultPath;
 
-    $activeNamespace = file_exists($derivedPath) ? $derivedNamespace : $defaultNamespace;
-    $activePath = file_exists($derivedPath) ? $derivedPath : $defaultPath;
-
-    if (file_exists($activePath)) {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($activePath),
-            RecursiveIteratorIterator::LEAVES_ONLY
-        );
-
-        foreach ($iterator as $file) {
-            if (
-                !$file->isFile() ||
-                $file->getExtension() !== 'php' ||
-                $file->getFilename() === 'BaseObserver.php'
-            ) {
-                continue;
-            }
-
-            $relativePath = str_replace($activePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
-            $classPath = str_replace(
-                [DIRECTORY_SEPARATOR, '.php'],
-                ['\\', ''],
-                $relativePath
+        if (file_exists($activePath)) {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($activePath),
+                RecursiveIteratorIterator::LEAVES_ONLY
             );
 
-            $observerClass = $activeNamespace . '\\' . $classPath;
-            $observerName  = class_basename($observerClass);
-            $modelName     = str_replace('Observer', '', $observerName);
+            foreach ($iterator as $file) {
+                if (
+                    !$file->isFile() ||
+                    $file->getExtension() !== 'php' ||
+                    $file->getFilename() === 'BaseObserver.php'
+                ) {
+                    continue;
+                }
 
-            if (isset($MODELS[$modelName]) && class_exists($observerClass)) {
-                $modelClass = $MODELS[$modelName];
-                $modelClass::observe($observerClass);
-                $MODELS->forget($modelName);
+                $relativePath = str_replace($activePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+                $classPath = str_replace(
+                    [DIRECTORY_SEPARATOR, '.php'],
+                    ['\\', ''],
+                    $relativePath
+                );
+
+                $observerClass = $activeNamespace . '\\' . $classPath;
+                $observerName  = class_basename($observerClass);
+                $modelName     = str_replace('Observer', '', $observerName);
+
+                if (isset($MODELS[$modelName]) && class_exists($observerClass)) {
+                    $modelClass = $MODELS[$modelName];
+                    $modelClass::observe($observerClass);
+                    $MODELS->forget($modelName);
+                }
             }
         }
-    }
 
-    foreach ($MODELS as $MODEL) {
-        $MODEL::observe(\Lyre\Observer::class);
+        foreach ($MODELS as $MODEL) {
+            $MODEL::observe(\Lyre\Observer::class);
+        }
     }
 }
 
+if (! function_exists('register_repositories')) {
+    function register_repositories($app, string $repositoriesBaseNamespace, string $contractsBaseNamespace)
+    {
+        $repositoriesPath = get_namespace_path($repositoriesBaseNamespace);
+        $contractsPath = get_namespace_path($contractsBaseNamespace);
 
-function register_repositories($app, string $repositoriesBaseNamespace, string $contractsBaseNamespace)
-{
-    $repositoriesPath = get_namespace_path($repositoriesBaseNamespace);
-    $contractsPath = get_namespace_path($contractsBaseNamespace);
-
-    if (! file_exists($repositoriesPath)) {
-        \Illuminate\Support\Facades\File::makeDirectory($repositoriesPath);
-    }
-
-    if (! file_exists($contractsPath)) {
-        \Illuminate\Support\Facades\File::makeDirectory($contractsPath);
-    }
-
-    $iterator = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($repositoriesPath)
-    );
-
-    foreach ($iterator as $file) {
-        if (!$file->isFile()) continue;
-
-        $fileName = $file->getFilename();
-
-        // TODO: Kigathi - April 21 2025 - Allow overriding the Repository.php by introducing a BaseRepository.php file at the repositoryPath
-        if (!Str::endsWith($fileName, 'Repository.php') || $fileName === 'BaseRepository.php') {
-            continue;
+        if (! file_exists($repositoriesPath)) {
+            \Illuminate\Support\Facades\File::makeDirectory($repositoriesPath);
         }
 
-        // Get relative path from the Repositories directory
-        $relativePath = Str::after($file->getPathname(), $repositoriesPath . DIRECTORY_SEPARATOR);
-        $namespacePath = str_replace(['/', '\\'], '\\', Str::replaceLast('.php', '', $relativePath));
+        if (! file_exists($contractsPath)) {
+            \Illuminate\Support\Facades\File::makeDirectory($contractsPath);
+        }
 
-        // Interface path must match the same relative structure
-        $interfaceNamespace = $contractsBaseNamespace . '\\' . $namespacePath . 'Interface';
-        $implementationNamespace = $repositoriesBaseNamespace . '\\' . $namespacePath;
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($repositoriesPath)
+        );
 
-        // Interface file must exist
-        $interfaceFilePath = $contractsPath . DIRECTORY_SEPARATOR . Str::replaceLast('Repository.php', 'RepositoryInterface.php', $relativePath);
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) continue;
 
-        if (file_exists($interfaceFilePath)) {
-            $app->bind($interfaceNamespace, function ($app) use ($implementationNamespace) {
-                return $app->make($implementationNamespace);
-            });
+            $fileName = $file->getFilename();
+
+            // TODO: Kigathi - April 21 2025 - Allow overriding the Repository.php by introducing a BaseRepository.php file at the repositoryPath
+            if (!Str::endsWith($fileName, 'Repository.php') || $fileName === 'BaseRepository.php') {
+                continue;
+            }
+
+            // Get relative path from the Repositories directory
+            $relativePath = Str::after($file->getPathname(), $repositoriesPath . DIRECTORY_SEPARATOR);
+            $namespacePath = str_replace(['/', '\\'], '\\', Str::replaceLast('.php', '', $relativePath));
+
+            // Interface path must match the same relative structure
+            $interfaceNamespace = $contractsBaseNamespace . '\\' . $namespacePath . 'Interface';
+            $implementationNamespace = $repositoriesBaseNamespace . '\\' . $namespacePath;
+
+            // Interface file must exist
+            $interfaceFilePath = $contractsPath . DIRECTORY_SEPARATOR . Str::replaceLast('Repository.php', 'RepositoryInterface.php', $relativePath);
+
+            if (file_exists($interfaceFilePath)) {
+                $app->bind($interfaceNamespace, function ($app) use ($implementationNamespace) {
+                    return $app->make($implementationNamespace);
+                });
+            }
         }
     }
 }

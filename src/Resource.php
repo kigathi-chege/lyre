@@ -75,6 +75,9 @@ class Resource extends JsonResource
                                 // TODO: Kigathi - December 24 2023 - Return paginated collection results
                                 $baseData[$relation] = $resource::collection($relationData);
                             } else {
+                                if ($relationObj instanceof \Illuminate\Database\Eloquent\Relations\MorphTo) {
+                                    $resource = $relationData::getResourceConfig();
+                                }
                                 $baseData[$relation] = new $resource($relationData);
                             }
                         }
