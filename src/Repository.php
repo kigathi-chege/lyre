@@ -30,6 +30,7 @@ class Repository implements RepositoryInterface
     protected $offset = false;
     protected $orderByColumn = null;
     protected $orderByOrder = 'desc';
+    protected $random = false;
     protected $startsWith = null;
     protected $withCount = [];
     protected $whereNull = [];
@@ -53,13 +54,18 @@ class Repository implements RepositoryInterface
         $query = $this->applyCallbacks($query, $callbacks);
         $query = $this->performOperations($query);
         $query = $this->search($query);
-        $query = $this->order($query);
+        if (!$this->random) {
+            $query = $this->order($query);
+        }
         $query = $this->applyStartsWith($query);
         $query = $this->applyWithCount($query);
         $query = $this->applyWhereNull($query);
         $query = $this->applyDoesntHave($query);
         if ($this->offset) {
             $query->offset($this->offset);
+        }
+        if ($this->random) {
+            $query->inRandomOrder();
         }
         $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
         return $this->collectResource($results, $this->limit ? false : $paginate && $this->paginate);
@@ -192,6 +198,12 @@ class Repository implements RepositoryInterface
     public function offset(int $offset)
     {
         $this->offset = $offset;
+        return $this;
+    }
+
+    public function random()
+    {
+        $this->random = true;
         return $this;
     }
 
@@ -667,6 +679,10 @@ class Repository implements RepositoryInterface
         if (array_key_exists('doesnthave', $requestQueries) && $requestQueries['doesnthave']) {
             $doesntHave = explode(',', $requestQueries['doesnthave']);
             $this->doesntHave($doesntHave);
+        }
+
+        if (array_key_exists('random', $requestQueries) && $requestQueries['random']) {
+            $this->random();
         }
 
         // TODO: Kigathi - September 11 2024 - Confirm that this code yields the expected results.
