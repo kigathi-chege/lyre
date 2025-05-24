@@ -560,19 +560,34 @@ class Repository implements RepositoryInterface
             $parts = explode(",", $requestQueries['relation']);
             $result = [];
             for ($i = 0; $i < count($parts); $i += 2) {
-                if ($parts[$i]) {
-                    $relatedModel = $this->model->{$parts[$i]}();
+                $relationPath = $parts[$i];
+                $value = $parts[$i + 1];
+
+                if ($relationPath) {
+                    $segments = explode('.', $relationPath);
+                    $relation = array_shift($segments);
+
+                    $relatedModel = $this->model->{$relation}();
                     $relatedModelClass = get_class($relatedModel->getRelated());
+
+                    foreach ($segments as $segment) {
+                        $relatedModel = (new $relatedModelClass)->{$segment}();
+                        $relatedModelClass = get_class($relatedModel->getRelated());
+                    }
+
                     $idColumn = $relatedModelClass::ID_COLUMN;
                     $idTable = (new $relatedModelClass)->getTable();
-                    $result[$parts[$i]] = [
+
+                    $result[$relationPath] = [
                         'column' => "$idTable.$idColumn",
-                        'value' => $parts[$i + 1],
+                        'value' => $value,
+                        'relation' => $relationPath
                     ];
                 }
             }
             $this->relationFilters += $result;
         }
+
 
         /**
          * Expected query string format for relation_in:
