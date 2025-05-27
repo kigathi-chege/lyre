@@ -84,6 +84,7 @@ class Repository implements RepositoryInterface
         $query = $this->linkRelations($query);
         $query = $this->applyCallbacks($query, $callbacks);
         $query = $this->performOperations($query);
+        $query = $this->applyWithCount($query);
         $resource = $query->first();
         if (!$resource) {
             if ($this->silent) {
