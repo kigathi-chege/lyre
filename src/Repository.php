@@ -68,7 +68,10 @@ class Repository implements RepositoryInterface
             $query->inRandomOrder();
         }
         $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
-        return $this->collectResource($results, $this->limit ? false : $paginate && $this->paginate);
+        return $this->collectResource(
+            query: $results,
+            paginate: $this->limit ? false : $paginate && $this->paginate
+        );
     }
 
     public function trashed()
@@ -721,18 +724,56 @@ class Repository implements RepositoryInterface
         return $query;
     }
 
+    /** 
+     * NOTE: Kigathi - June 4 2025 - Understand following functionality from ChatGPT
+     * 
+     * This function was implemented for depth relationships, but threw error:
+     * Call to undefined method Laravel\Sanctum\PersonalAccessToken::generateConfig()
+     * For depth deeper than 1 in getModelRelationships()
+     */
+    // private function filterValidRelationships(array $relationships): array
+    // {
+    //     $loadResources = $this->resource::loadResources($this->model);
+    //     $pivotResources = $this->resource::pivotResources();
+    //     $validRelationships = [];
+    //     foreach ($relationships as $relationship) {
+    //         if (isset($loadResources[$relationship]) || isset($pivotResources[$relationship])) {
+    //             $validRelationships[] = $relationship;
+    //         }
+    //     }
+    //     return $validRelationships;
+    // }
+
+    // TODO: Kigathi - June 4 2025 - Understand following functionality from ChatGPT
     private function filterValidRelationships(array $relationships): array
     {
-        $loadResources = $this->resource::loadResources($this->model);
-        $pivotResources = $this->resource::pivotResources();
         $validRelationships = [];
+
         foreach ($relationships as $relationship) {
-            if (isset($loadResources[$relationship]) || isset($pivotResources[$relationship])) {
+            $parts = explode('.', $relationship);
+            $model = $this->model;
+
+            $isValid = true;
+            foreach ($parts as $part) {
+                $available = $model::getModelRelationships();
+                if (!isset($available[$part])) {
+                    $isValid = false;
+                    break;
+                }
+
+                // Drill down into the next related model
+                $relatedClass = $available[$part];
+                $model = new $relatedClass;
+            }
+
+            if ($isValid) {
                 $validRelationships[] = $relationship;
             }
         }
+
         return $validRelationships;
     }
+
 
     public function performOperations($query)
     {

@@ -141,37 +141,48 @@ trait BaseModelTrait
     }
 
 
-    public static function getModelRelationships(): array
+    public static function getModelRelationships(int | null $depth = null): array
     {
-        $cacheKey = 'model_relationships_' . static::getClassName();
+        $depth = $depth ?? config('lyre.relationship_depth', 1);
+        $cacheKey = 'model_relationships_' . static::getClassName() . "_depth_$depth";
 
-        return cache()->rememberForever($cacheKey, function () {
-
-            $model = new static();
-            $class = new \ReflectionClass($model);
-            $methods = $class->getMethods();
-
-            $relationships = [];
-
-            foreach ($methods as $method) {
-                if ($method->class != get_class($model)) continue;
-                if (!empty($method->getParameters())) continue;
-
-                try {
-                    $relation = $method->invoke($model);
-
-                    if ($relation instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
-                        $relatedModel = get_class($relation->getRelated());
-                        $relationships[$method->getName()] = $relatedModel;
-                    }
-                } catch (\Throwable $e) {
-                    // skip methods that can't be invoked
-                }
-            }
-
-            return $relationships;
+        return cache()->rememberForever($cacheKey, function () use ($depth) {
+            return static::extractModelRelationships(new static(), $depth);
         });
     }
+
+    protected static function extractModelRelationships($model, int $depth, string $prefix = ''): array
+    {
+        $relationships = [];
+        $class = new \ReflectionClass($model);
+        $methods = $class->getMethods();
+
+        foreach ($methods as $method) {
+            if ($method->class !== get_class($model)) continue;
+            if (!empty($method->getParameters())) continue;
+
+            try {
+                $relation = $method->invoke($model);
+
+                if ($relation instanceof \Illuminate\Database\Eloquent\Relations\Relation) {
+                    $relationName = $prefix . $method->getName();
+                    $relatedModel = $relation->getRelated();
+                    $relationships[$relationName] = get_class($relatedModel);
+
+                    // Recurse if depth allows
+                    if ($depth > 1) {
+                        $nested = static::extractModelRelationships($relatedModel, $depth - 1, $relationName . '.');
+                        $relationships = array_merge($relationships, $nested);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Skip methods that throw on invocation
+            }
+        }
+
+        return $relationships;
+    }
+
 
     public function searcheableRelations()
     {
