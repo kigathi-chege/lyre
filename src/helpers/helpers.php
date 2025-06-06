@@ -324,7 +324,7 @@ if (! function_exists('get_model_name')) {
         if ($name_col) {
             return $model->$name_col;
         }
-        return class_basename($model) || "MODEL";
+        return class_basename($model) ?? "MODEL";
     }
 }
 

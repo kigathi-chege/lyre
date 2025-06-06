@@ -144,7 +144,8 @@ trait BaseModelTrait
     public static function getModelRelationships(int | null $depth = null): array
     {
         $depth = $depth ?? config('lyre.relationship_depth', 1);
-        $cacheKey = 'model_relationships_' . static::getClassName() . "_depth_$depth";
+        // $cacheKey = 'model_relationships_' . static::getClassName() . "_depth_$depth";
+        $cacheKey = 'model_relationships_' . static::getClassName();
 
         return cache()->rememberForever($cacheKey, function () use ($depth) {
             return static::extractModelRelationships(new static(), $depth);
