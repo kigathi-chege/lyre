@@ -43,7 +43,7 @@ class Repository implements RepositoryInterface
         $this->resource = Lyre::getModelResource($this->model);
     }
 
-    public function all(array | null $callbacks = [], $paginate = true)
+    public function buildQuery(array | null $callbacks = [], $paginate = true)
     {
         $query = $this->model->query();
         $query = $this->prepareQuery($query);
@@ -67,6 +67,12 @@ class Repository implements RepositoryInterface
         if ($this->random) {
             $query->inRandomOrder();
         }
+        return $query;
+    }
+
+    public function all(array | null $callbacks = [], $paginate = true)
+    {
+        $query = $this->buildQuery($callbacks, $paginate);
         $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
         return $this->collectResource(
             query: $results,
@@ -166,6 +172,7 @@ class Repository implements RepositoryInterface
 
     public function delete($slug)
     {
+        // TODO: Kigathi - June 12 2025 - This assumes that all models will have a slug, a very bad assumption
         $thisModel = $this->model->where(["slug" => $slug])->first();
         if (!$thisModel) {
             throw new \Exception("Resource not found", 404);
@@ -724,9 +731,9 @@ class Repository implements RepositoryInterface
         return $query;
     }
 
-    /** 
+    /**
      * NOTE: Kigathi - June 4 2025 - Understand following functionality from ChatGPT
-     * 
+     *
      * This function was implemented for depth relationships, but threw error:
      * Call to undefined method Laravel\Sanctum\PersonalAccessToken::generateConfig()
      * For depth deeper than 1 in getModelRelationships()
