@@ -35,6 +35,7 @@ class Repository implements RepositoryInterface
     protected $withCount = [];
     protected $whereNull = [];
     protected $doesntHave = [];
+    protected $first = false;
 
     public function __construct($model)
     {
@@ -73,7 +74,15 @@ class Repository implements RepositoryInterface
     public function all(array | null $callbacks = [], $paginate = true)
     {
         $query = $this->buildQuery($callbacks, $paginate);
-        $results = $this->limit ? $query->limit($this->limit)->get() : ($paginate && $this->paginate ? $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) : $query->get());
+
+        if ($this->first) {
+            return $query->first();
+        }
+
+        $results = $this->limit ?
+            $query->limit($this->limit)->get() : ($paginate && $this->paginate ?
+                $query->paginate($this->perPage ?? 10, ['*'], 'page', $this->page) :
+                $query->get());
         return $this->collectResource(
             query: $results,
             paginate: $this->limit ? false : $paginate && $this->paginate
@@ -179,6 +188,12 @@ class Repository implements RepositoryInterface
         }
         $thisModel->delete();
         return $this->resource ? new $this->resource($thisModel) : $thisModel;
+    }
+
+    public function first()
+    {
+        $this->first = true;
+        return $this;
     }
 
     public function relations(array $relations)
@@ -709,6 +724,10 @@ class Repository implements RepositoryInterface
 
         if (array_key_exists('random', $requestQueries) && $requestQueries['random']) {
             $this->random();
+        }
+
+        if (array_key_exists('first', $requestQueries) && $requestQueries['first']) {
+            $this->first();
         }
 
         // TODO: Kigathi - September 11 2024 - Confirm that this code yields the expected results.
