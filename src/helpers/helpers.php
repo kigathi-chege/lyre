@@ -291,11 +291,23 @@ if (! function_exists('get_model_classes')) {
                     $relativePath
                 );
 
-                $fullClass = $namespace . '\\' . $classPath;
+                $className = $namespace . '\\' . $classPath;
 
-                if (class_exists($fullClass)) {
-                    $modelClasses[class_basename($fullClass)] = $fullClass;
+                if (!class_exists($className)) {
+                    continue;
                 }
+
+                $reflection = new ReflectionClass($className);
+
+                if (
+                    !$reflection->isInstantiable() ||
+                    !$reflection->isSubclassOf(\Illuminate\Database\Eloquent\Model::class)
+                ) {
+                    continue;
+                }
+
+                $modelName = class_basename($className);
+                $modelClasses[$modelName] = $className;
             }
         }
 
