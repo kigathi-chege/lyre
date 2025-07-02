@@ -227,6 +227,10 @@ if (! function_exists('get_filament_shield_permission_by_prefix')) {
     function get_filament_shield_permission_by_prefix($modelClass, $prefix)
     {
         $resourceClass = get_filament_resource_for_model($modelClass);
+        if (!$resourceClass) {
+            return $prefix . '_' . (new $modelClass)->getTable();
+        }
+
         $filamentShieldResources = \BezhanSalleh\FilamentShield\Facades\FilamentShield::getResources();
         $entry = collect($filamentShieldResources)->first(fn($entry) => $entry['fqcn'] === $resourceClass);
         $resourceByFQCN = $entry['fqcn'];

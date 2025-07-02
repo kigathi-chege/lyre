@@ -29,6 +29,7 @@ interface RepositoryInterface
     public function search($query);
     public function orderBy(string $column, string $order = 'desc');
     public function order($query);
+    public function noOrder();
     public function linkRelations($query);
     public function collectResource($query);
     public function sanitizeArguments($arguments);
