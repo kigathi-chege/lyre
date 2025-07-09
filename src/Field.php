@@ -4,10 +4,13 @@ namespace Lyre;
 
 use Illuminate\Database\Schema\ColumnDefinition;
 use Attribute;
+use App\Database\ColumnTypeRegistry;
+use Lyre\Exceptions\CommonException;
 
 #[Attribute]
 class Field
 {
+    public string $name;
     public string $type;
     public array $modifiers;
     public array $options;
@@ -42,6 +45,13 @@ class Field
             if (!$foundType) {
                 echo "Type error" . PHP_EOL;
                 echo "Missing field type" . PHP_EOL;
+                throw CommonException::fromMessage("Missing field type");
+            }
+
+            if (!ColumnTypeRegistry::has($this->type)) {
+                echo "Type error" . PHP_EOL;
+                echo "Invalid field type" . PHP_EOL;
+                throw CommonException::fromMessage("Invalid field type");
             }
 
             if (is_string($key)) {
