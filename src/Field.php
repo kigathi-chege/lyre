@@ -54,6 +54,8 @@ class Field
                 throw CommonException::fromMessage("Invalid field type");
             }
 
+            // TODO: Kigathi - July 11 2025 - Should differentiate between modifiers and options (options are arguments to functions, while modifiers are the function names)
+
             if (is_string($key)) {
                 // Named argument
                 $this->options[$key] = $value;
