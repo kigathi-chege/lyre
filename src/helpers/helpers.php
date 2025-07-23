@@ -100,12 +100,12 @@ if (! function_exists('generate_slug')) {
 }
 
 if (! function_exists("generate_uuid")) {
-    function generate_uuid($model, $length = 8)
+    function generate_uuid($model)
     {
-        $uuid = substr(\Illuminate\Support\Str::uuid(), 0, $length);
+        $uuid = \Illuminate\Support\Str::uuid();
         if ($model::where("uuid", $uuid)->exists()) {
             do {
-                $uuid = substr(\Illuminate\Support\Str::uuid(), 0, $length);
+                $uuid = \Illuminate\Support\Str::uuid();
             } while ($model::where("uuid", $uuid)->exists());
         }
         return $uuid;

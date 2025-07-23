@@ -101,7 +101,7 @@ class Resource extends JsonResource
 
     public static function serializableColumns($resource)
     {
-        $custom = $resource->getCustomColumns();
+        $custom = $resource->resolveCustomColumns();
 
         $baseColumns = $resource->getFillableAttributes();
 

@@ -195,7 +195,11 @@ trait BaseModelTrait
         static::$globalCustomColumns = $columns;
     }
 
-    public function getCustomColumns()
+    /**
+     * NOTE: Kigathi - July 23 2025
+     * Changed method signature to avoid conflict with tenancy
+     */
+    public function resolveCustomColumns()
     {
         return $this->customColumns ?: static::$globalCustomColumns;
     }

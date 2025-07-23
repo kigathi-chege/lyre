@@ -63,12 +63,12 @@ class ModelService
         $model->setAttribute("slug", $slug);
     }
 
-    public static function generateUuid($model, $length = 8)
+    public static function generateUuid($model)
     {
-        $uuid = substr(Str::uuid(), 0, $length);
+        $uuid = Str::uuid();
         if ($model::where("uuid", $uuid)->exists()) {
             do {
-                $uuid = substr(Str::uuid(), 0, $length);
+                $uuid = Str::uuid();
             } while ($model::where("uuid", $uuid)->exists());
         }
         return $uuid;
