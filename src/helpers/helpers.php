@@ -821,10 +821,21 @@ if (! function_exists('register_repositories')) {
             // Interface file must exist
             $interfaceFilePath = $contractsPath . DIRECTORY_SEPARATOR . Str::replaceLast('Repository.php', 'RepositoryInterface.php', $relativePath);
 
+            $helperName = Str::of($namespacePath)
+                ->camel();
+
             if (file_exists($interfaceFilePath)) {
                 $app->bind($interfaceNamespace, function ($app) use ($implementationNamespace) {
                     return $app->make($implementationNamespace);
                 });
+
+                if (! function_exists($helperName)) {
+                    eval("
+                        function {$helperName}() {
+                            return app('{$interfaceNamespace}');
+                        }
+                    ");
+                }
             }
         }
     }
