@@ -48,12 +48,56 @@ return [
     /**
      * Model config discovery paths
      */
-    'path'      => [
-        'model' => ['App\Models', 'Lyre\Content\Models'],
-        'repository' => ['App\Repositories', 'Lyre\Content\Repositories'],
-        'contracts'      => ['App\Repositories\Interface', 'Lyre\Content\Repositories\Contracts'],
-        'resource'      => ['App\Http\Resources', 'Lyre\Content\Http\Resources'],
-        'request'      => ['App\Http\Requests', 'Lyre\Content\Http\Requests'],
+    'path' => [
+        'model' => [
+            'App\Models',
+            'Lyre\Content\Models',
+            'Lyre\File\Models',
+            'Lyre\Facet\Models',
+            'Lyre\Settings\Models',
+            'Lyre\Guest\Models',
+            'Lyre\Billing\Models',
+        ],
+
+        'repository' => [
+            'App\Repositories',
+            'Lyre\Content\Repositories',
+            'Lyre\File\Repositories',
+            'Lyre\Facet\Repositories',
+            'Lyre\Settings\Repositories',
+            'Lyre\Guest\Repositories',
+            'Lyre\Billing\Repositories',
+        ],
+
+        'contracts' => [
+            'App\Repositories\Interface',
+            'Lyre\Content\Repositories\Contracts',
+            'Lyre\File\Repositories\Contracts',
+            'Lyre\Facet\Repositories\Contracts',
+            'Lyre\Settings\Contracts',
+            'Lyre\Guest\Contracts',
+            'Lyre\Billing\Contracts',
+        ],
+
+        'resource' => [
+            'App\Http\Resources',
+            'Lyre\Content\Http\Resources',
+            'Lyre\File\Http\Resources',
+            'Lyre\Facet\Http\Resources',
+            'Lyre\Settings\Http\Resources',
+            'Lyre\Guest\Http\Resources',
+            'Lyre\Billing\Http\Resources',
+        ],
+
+        'request' => [
+            'App\Http\Requests',
+            'Lyre\Content\Http\Requests',
+            'Lyre\File\Http\Requests',
+            'Lyre\Facet\Http\Requests',
+            'Lyre\Settings\Http\Requests',
+            'Lyre\Guest\Http\Requests',
+            'Lyre\Billing\Http\Requests',
+        ],
     ],
 
     /**
