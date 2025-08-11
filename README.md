@@ -236,6 +236,14 @@ class User extends Authenticatable
 }
 ```
 
+## Clear Model Classes Cache
+
+Whenever you add a new model, you need to clear the `app_model_classes` cache to ensure `get_model_classes` always returns the most up to date list.
+
+```bash
+php artisan cache:forget app_model_classes
+```
+
 ## License
 
 Lyre is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

@@ -1,7 +1,5 @@
 <?php
 
-$basicResponseCodes = generate_basic_model_response_codes();
-
 return [
     0000 => "success",
 
@@ -17,4 +15,4 @@ return [
 
     4004 => 'setup',
 
-] + $basicResponseCodes;
+];
