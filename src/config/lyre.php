@@ -51,6 +51,7 @@ return [
     'path' => [
         'model' => [
             'App\Models',
+            'Lyre\Models',
             'Lyre\Content\Models',
             'Lyre\File\Models',
             'Lyre\Facet\Models',
@@ -61,6 +62,7 @@ return [
 
         'repository' => [
             'App\Repositories',
+            'Lyre\Repositories',
             'Lyre\Content\Repositories',
             'Lyre\File\Repositories',
             'Lyre\Facet\Repositories',
@@ -71,6 +73,7 @@ return [
 
         'contracts' => [
             'App\Repositories\Interface',
+            'Lyre\Contracts',
             'Lyre\Content\Repositories\Contracts',
             'Lyre\File\Repositories\Contracts',
             'Lyre\Facet\Repositories\Contracts',
@@ -81,6 +84,7 @@ return [
 
         'resource' => [
             'App\Http\Resources',
+            'Lyre\Http\Resources',
             'Lyre\Content\Http\Resources',
             'Lyre\File\Http\Resources',
             'Lyre\Facet\Http\Resources',
@@ -91,6 +95,7 @@ return [
 
         'request' => [
             'App\Http\Requests',
+            'Lyre\Http\Requests',
             'Lyre\Content\Http\Requests',
             'Lyre\File\Http\Requests',
             'Lyre\Facet\Http\Requests',
@@ -104,4 +109,26 @@ return [
      * Use filament shield permissions
      */
     'filament-shield' => false,
+
+    /**
+     * Tenancy configuration
+     * This is used to enable multi-tenancy features in Lyre.
+     */
+    'tenancy' => [
+        'enabled' => false,
+        'model' => \App\Models\Tenant::class,
+        'association_model' => \Lyre\Models\TenantAssociation::class,
+    ],
+
+    /**
+     * Lyre settings configuration
+     * This is used to configure the Lyre settings package.
+     */
+    'settings' => [
+        'model' => \Lyre\Settings\Models\Setting::class,
+        'repository' => \Lyre\Settings\Repositories\SettingRepository::class,
+        'repository-interface' => \Lyre\Settings\Contracts\SettingRepositoryInterface::class,
+        'policy' => \Lyre\Settings\Policies\SettingPolicy::class,
+        'resource' => \Lyre\Settings\Http\Resources\Setting::class,
+    ]
 ];

@@ -4,7 +4,7 @@ namespace Lyre\Traits;
 
 trait BaseModelTrait
 {
-    use CanIncludeColumns;
+    use CanIncludeColumns, BelongsToTenant;
 
     const ID_COLUMN = 'id';
     const NAME_COLUMN = 'name';

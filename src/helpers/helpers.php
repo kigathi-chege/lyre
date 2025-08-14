@@ -770,6 +770,8 @@ if (! function_exists('register_global_observers')) {
         $activeNamespace = file_exists($derivedPath) ? $derivedNamespace : $defaultNamespace;
         $activePath = file_exists($derivedPath) ? $derivedPath : $defaultPath;
 
+        static $registered = [];
+
         if (file_exists($activePath)) {
             $iterator = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($activePath),
@@ -798,14 +800,21 @@ if (! function_exists('register_global_observers')) {
 
                 if (isset($MODELS[$modelName]) && class_exists($observerClass)) {
                     $modelClass = $MODELS[$modelName];
+                    // TODO: Kigathi - August 13 2025 - Implement indempotence to ensure observers are not registered multiple times
+                    // if (!isset($registered[$modelClass][$observerClass])) {
                     $modelClass::observe($observerClass);
                     $MODELS->forget($modelName);
+                    //     $registered[$modelClass][$observerClass] = true;
+                    // }
                 }
             }
         }
 
         foreach ($MODELS as $MODEL) {
+            // if (!isset($registered[$modelClass][$observerClass])) {
             $MODEL::observe(\Lyre\Observer::class);
+            //     $registered[$modelClass][$observerClass] = true;
+            // }
         }
     }
 }
@@ -866,5 +875,12 @@ if (! function_exists('register_repositories')) {
                 }
             }
         }
+    }
+}
+
+if (!function_exists('tenant')) {
+    function tenant()
+    {
+        return app()->bound('tenant') ? app('tenant') : null;
     }
 }
