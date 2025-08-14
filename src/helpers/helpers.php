@@ -235,11 +235,12 @@ if (! function_exists('get_filament_shield_permission_by_prefix')) {
         $entry = collect($filamentShieldResources)->first(fn($entry) => $entry['fqcn'] === $resourceClass);
         $resourceByFQCN = $entry['fqcn'];
         $permissionPrefixes = \BezhanSalleh\FilamentShield\Support\Utils::getResourcePermissionPrefixes($resourceByFQCN);
+
         if (in_array($prefix, $permissionPrefixes)) {
             return $prefix . '_' . $entry['resource'];
         }
 
-        throw CommonException::fromMessage('Permission not found');
+        throw CommonException::fromMessage("Permission not found for prefix {$prefix} of {$modelClass} - {$resourceClass}");
     }
 }
 
@@ -517,15 +518,26 @@ if (! function_exists("generate_basic_model_permissions")) {
         $models = get_model_classes();
         foreach ($models as $model) {
             $name = (new $model)->getTable();
-            $permissions[$name] = [
+
+            // Required permissions — will throw if missing
+            $modelPermissions = [
                 get_model_permission_by_prefix($model, 'view-any'),
                 get_model_permission_by_prefix($model, 'view'),
                 get_model_permission_by_prefix($model, 'create'),
                 get_model_permission_by_prefix($model, 'update'),
                 get_model_permission_by_prefix($model, 'delete'),
-                get_model_permission_by_prefix($model, 'restore'),
-                get_model_permission_by_prefix($model, 'force-delete'),
             ];
+
+            // Optional permissions — skip if not found
+            foreach (['restore', 'force-delete'] as $optional) {
+                try {
+                    $modelPermissions[] = get_model_permission_by_prefix($model, $optional);
+                } catch (\Throwable $th) {
+                    logger("Optional permission missing: {$optional} for model {$model}");
+                }
+            }
+
+            $permissions[$name] = $modelPermissions;
         }
         return $permissions;
     }
@@ -560,6 +572,7 @@ function get_model_class_from_table_name($table_name)
             return $model;
         }
     }
+    throw CommonException::fromMessage("Model with table name {$table_name} not found");
 }
 
 if (! function_exists("generate_basic_model_response_codes")) {

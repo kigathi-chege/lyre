@@ -27,12 +27,12 @@ class RegisterTenant extends \Filament\Pages\Tenancy\RegisterTenant
                     ->label('Organization Name')
                     ->required()
                     ->maxLength(255)
-                    ->debounce(500)
-                    ->unique(Tenant::class, 'name', ignorable: fn(?Tenant $record) => $record)
-                    ->afterStateUpdated(
-                        fn(callable $set, $state) =>
-                        $set('domain', Str::slug($state))
-                    ),
+                // ->debounce(500)
+                // ->unique(Tenant::class, 'name', ignorable: fn(?Tenant $record) => $record)
+                // ->afterStateUpdated(
+                //     fn(callable $set, $state) =>
+                //     $set('domain', Str::slug($state))
+                // ),
                 // TextInput::make('domain')
                 //     ->label('Domain Name')
                 //     ->prefix('')
@@ -101,8 +101,8 @@ class RegisterTenant extends \Filament\Pages\Tenancy\RegisterTenant
         return $redirectUrl;
     }
 
-    protected function getRedirectUrl(): ?string
-    {
-        return $this->redirect ?? Filament::getUrl($this->tenant);
-    }
+    // protected function getRedirectUrl(): ?string
+    // {
+    //     return $this->redirect ?? Filament::getUrl($this->tenant);
+    // }
 }

@@ -29,8 +29,11 @@ class SetCurrentTenant
             if ($tenant) {
                 logger("Setting current tenant to {$tenant?->id} - {$tenant?->name}");
 
-                // TODO: Kigathi - August 14 2025 - Should only set permissions teamID if spatie/laravel-permission is installed
-                setPermissionsTeamId($tenant?->id);
+                $usingSpatieRoles = in_array(\Spatie\Permission\Traits\HasRoles::class, class_uses(\App\Models\User::class));
+
+                if ($usingSpatieRoles) {
+                    setPermissionsTeamId($tenant?->id);
+                }
 
                 // In future: allow switch via query, header, session, etc.
                 // $tenantId = $request->header('X-Tenant-ID') ?? $request->cookie('tenant_id') ?? $tenant->id;
