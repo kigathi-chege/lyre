@@ -9,7 +9,7 @@ interface RepositoryInterface
     public function find($arguments, array | null $callbacks = []);
     public function latest();
     public function create(array $data);
-    public function update(array $data, string $slug, $model = null);
+    public function update(array $data, string | int $slug, $thisModel = null);
     public function random();
     public function limit(int $limit);
     public function firstOrCreate(array $search, array $data = []);

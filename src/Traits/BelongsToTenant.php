@@ -45,8 +45,14 @@ trait BelongsToTenant
         });
     }
 
-    public function attachTenant(Tenant $tenant): void
+    public function associateWithTenant(Tenant $tenant): void
     {
+        $tenantClass = app()->make(Tenant::class)::class;
+
+        if (! $tenant instanceof $tenantClass) {
+            $tenant = $tenantClass::findOrFail($tenant);
+        }
+
         $this->tenantAssociations()->firstOrCreate([
             'tenant_id' => $tenant->id,
         ]);
@@ -59,8 +65,10 @@ trait BelongsToTenant
 
     public function associatedTenants(): MorphToMany
     {
+        $tenantClass = app()->make(Tenant::class)::class;
+
         return $this->morphToMany(
-            Tenant::class,
+            $tenantClass,
             'tenantable',              // morph name (based on tenantable_id / tenantable_type in TenantAssociation)
             'tenant_associations',     // pivot table
             'tenantable_id',           // FK to your model

@@ -155,7 +155,7 @@ class Repository implements RepositoryInterface
         return $result;
     }
 
-    public function update(array $data, string $slug, $thisModel = null)
+    public function update(array $data, string | int $slug, $thisModel = null)
     {
         $slugs = [$slug];
         if ($thisModel) {

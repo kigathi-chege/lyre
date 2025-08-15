@@ -38,7 +38,7 @@ class SetCurrentTenant
                 // In future: allow switch via query, header, session, etc.
                 // $tenantId = $request->header('X-Tenant-ID') ?? $request->cookie('tenant_id') ?? $tenant->id;
 
-                App::instance('tenant', $tenant);
+                app()->instance('tenant', $tenant);
             }
         } else {
             logger("No tenant found for user or user is not authenticated. Skipping tenant setup.");
