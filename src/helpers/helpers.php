@@ -897,3 +897,56 @@ if (!function_exists('tenant')) {
         return app()->bound('tenant') ? app('tenant') : null;
     }
 }
+
+if (!function_exists('get_table_foreign_columns')) {
+    function get_table_foreign_columns($table, $schema = null)
+    {
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            $schema = $schema ?? 'public';
+
+            $foreignKeys = DB::select("
+                SELECT DISTINCT
+                    kcu.column_name,
+                    ccu.table_name AS foreign_table,
+                    ccu.column_name AS foreign_column
+                FROM
+                    information_schema.table_constraints AS tc
+                JOIN information_schema.key_column_usage AS kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                 AND tc.constraint_schema = kcu.constraint_schema
+                JOIN information_schema.constraint_column_usage AS ccu
+                  ON ccu.constraint_name = tc.constraint_name
+                 AND ccu.constraint_schema = tc.constraint_schema
+                WHERE tc.constraint_type = 'FOREIGN KEY'
+                  AND tc.table_name = ?
+                  AND tc.table_schema = ?
+            ", [$table, $schema]);
+        } elseif ($driver === 'mysql') {
+            $schema = $schema ?? DB::getDatabaseName();
+
+            $foreignKeys = DB::select("
+                SELECT DISTINCT
+                    kcu.COLUMN_NAME AS column_name,
+                    kcu.REFERENCED_TABLE_NAME AS foreign_table,
+                    kcu.REFERENCED_COLUMN_NAME AS foreign_column
+                FROM
+                    information_schema.KEY_COLUMN_USAGE kcu
+                WHERE
+                    kcu.TABLE_NAME = ?
+                    AND kcu.TABLE_SCHEMA = ?
+                    AND kcu.REFERENCED_TABLE_NAME IS NOT NULL
+            ", [$table, $schema]);
+        } else {
+            throw new \Exception("Unsupported driver: {$driver}");
+        }
+
+        $columns = [];
+        foreach ($foreignKeys as $fk) {
+            $columns[] = $fk->column_name;
+        }
+
+        return array_values(array_unique($columns));
+    }
+}

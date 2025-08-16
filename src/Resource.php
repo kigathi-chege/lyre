@@ -128,12 +128,12 @@ class Resource extends JsonResource
 
         $associatedBaseColumns = array_combine($baseColumns, $baseColumns);
 
-        $filteredBaseColumns = [];
-        foreach ($associatedBaseColumns as $key => $value) {
-            if (!preg_match('/_id$/', $key)) {
-                $filteredBaseColumns[$key] = $value;
-            }
-        }
+        $foreignColumns = get_table_foreign_columns($resource->getTable());
+
+        $filteredBaseColumns = array_diff_key(
+            $associatedBaseColumns,
+            array_flip($foreignColumns)
+        );
 
         $columns = $filteredBaseColumns + [
             "id" => get_model_id_column($resource),
