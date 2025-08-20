@@ -99,7 +99,18 @@ class Repository implements RepositoryInterface
     {
         $query = $this->model->query();
         $query = $this->prepareQuery($query);
-        $query = $this->filter($query, $arguments);
+
+        if (!is_array($arguments)) {
+            $idColumn = get_model_id_column($this->model);
+            $query = $this->model->where($idColumn, $arguments);
+
+            if (Schema::hasColumn($this->model->getTable(), 'slug')) {
+                $query->orWhere('slug', $arguments);
+            }
+        } else {
+            $query = $this->filter($query, $arguments);
+        }
+
         $query = $this->linkRelations($query);
         $query = $this->applyCallbacks($query, $callbacks);
         $query = $this->performOperations($query);
@@ -182,13 +193,29 @@ class Repository implements RepositoryInterface
 
     public function delete($slug)
     {
-        // TODO: Kigathi - June 12 2025 - This assumes that all models will have a slug, a very bad assumption
-        $thisModel = $this->model->where(["slug" => $slug])->first();
+        $query = $this->model->query();
+
+        if (!is_array($slug)) {
+            $slug = [$slug];
+        }
+
+        $idColumn = get_model_id_column($this->model);
+        $query = $this->model->whereIn($idColumn, $slug);
+
+        if (Schema::hasColumn($this->model->getTable(), 'slug')) {
+            $query->orWhereIn('slug', $slug);
+        }
+
+        $thisModel = $query->get();
+
         if (!$thisModel) {
             throw new \Exception("Resource not found", 404);
         }
-        $thisModel->delete();
-        return $this->resource ? new $this->resource($thisModel) : $thisModel;
+        $thisModel->each->delete();
+
+        return $this->resource
+            ? $this->resource::collection($thisModel)
+            : $thisModel;
     }
 
     public function first()

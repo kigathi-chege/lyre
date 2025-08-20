@@ -17,7 +17,7 @@ class Request extends FormRequest
     public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(
-            curate_response(false, "Validation Errors", $validator->errors(), Response::HTTP_UNPROCESSABLE_ENTITY)
+            __response(false, "Validation Errors", $validator->errors(), Response::HTTP_UNPROCESSABLE_ENTITY)
         );
     }
 }

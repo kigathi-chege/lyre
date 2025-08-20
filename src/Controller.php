@@ -63,7 +63,7 @@ class Controller extends BaseController
             $data = $query->paginate($perPage, $currentPage)->all($filterCallBack, $paginate);
         }
 
-        return curate_response(
+        return __response(
             true,
             "Get {$this->modelNamePlural}",
             $data,
@@ -79,7 +79,7 @@ class Controller extends BaseController
             $scopedResource = $this->getScopedResource($scope, $scopeName);
             $validatedData["{$scopeName}_id"] = $scopedResource->resource->id;
         }
-        return curate_response(
+        return __response(
             true,
             "Create {$this->modelNamePlural}",
             $this->modelRepository->create($validatedData),
@@ -90,7 +90,7 @@ class Controller extends BaseController
     public function show(Request $request, $slug, $scope = null)
     {
         $modelResource = $this->localAuthorize('view', $slug);
-        return curate_response(
+        return __response(
             true,
             "Find {$this->modelName}",
             $modelResource,
@@ -102,7 +102,7 @@ class Controller extends BaseController
     {
         $modelResource = $this->localAuthorize(count(explode(',', $slug)) > 1 ? 'bulkUpdate' : 'update', $scope ?? $slug);
         $validatedData = $this->validateData($request, 'update-request');
-        return curate_response(
+        return __response(
             true,
             "Update {$this->modelName}",
             $this->modelRepository->update($validatedData, $scope ?? $slug, $modelResource->resource ?? null),
@@ -114,7 +114,7 @@ class Controller extends BaseController
     {
         $modelResource = $this->localAuthorize('destroy', $slug);
         $this->modelRepository->delete($slug);
-        return curate_response(
+        return __response(
             true,
             "Delete {$this->modelName}",
             $modelResource,

@@ -32,11 +32,11 @@ if (! function_exists("parse_validation_error_response")) {
     }
 }
 
-if (! function_exists("curate_response")) {
-    function curate_response(
+if (! function_exists("__response")) {
+    function __response(
         $status,
         $message,
-        $response,
+        $result,
         $code = 200,
         $trace = false,
         array $extra = [],
@@ -46,7 +46,7 @@ if (! function_exists("curate_response")) {
         $responseData = array_merge([
             "status"   => $status,
             "message"  => $message,
-            "response" => $response,
+            "result" => $result,
             "code"     => $code,
         ], $extra);
 
