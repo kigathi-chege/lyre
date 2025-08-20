@@ -188,6 +188,12 @@ class Repository implements RepositoryInterface
         foreach ($thisModel as $model) {
             $model->update($data);
         }
+        if ($thisModel->count() === 1) {
+            $single = $thisModel->first();
+            return $this->resource
+                ? new $this->resource($single)
+                : $single;
+        }
         return $this->collectResource(query: $thisModel, paginate: false);
     }
 
