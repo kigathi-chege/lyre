@@ -263,17 +263,12 @@ if (! function_exists('get_model_permission_by_prefix')) {
 if (! function_exists('get_model_classes')) {
     function get_model_classes($baseNamespace = null)
     {
-        // If baseNamespace is provided, do NOT use cache — scan fresh
         if ($baseNamespace !== null) {
-            return scan_for_models($baseNamespace);
+            return cache()->rememberForever("app_model_classes:{$baseNamespace}", fn() => scan_for_models($baseNamespace));
         }
 
-        // Otherwise, cache the results for the default namespaces
-        return cache()->rememberForever('app_model_classes', function () {
-            logger("Scanning for models in default namespaces...");
-            $defaultNamespaces = config('lyre.path.model', ['App\\Models']);
-            return scan_for_models($defaultNamespaces);
-        });
+        $defaultNamespaces = config('lyre.path.model', ['App\\Models']);
+        return cache()->rememberForever('app_model_classes', fn() => scan_for_models($defaultNamespaces));
     }
 }
 
@@ -286,63 +281,61 @@ if (! function_exists('scan_for_models')) {
      */
     function scan_for_models($namespaces)
     {
-        return cache()->rememberForever('app_model_classes', function () use ($namespaces) {
-            $namespaces = is_array($namespaces) ? $namespaces : [$namespaces];
-            logger("Scanning for models in namespaces: " . implode(', ', $namespaces));
-            $modelClasses   = [];
+        $namespaces = is_array($namespaces) ? $namespaces : [$namespaces];
+        logger("Scanning for models in namespaces: " . implode(', ', $namespaces));
+        $modelClasses   = [];
 
-            foreach ($namespaces as $namespace) {
-                $namespace = trim($namespace, '\\');
-                $namespacePath = get_namespace_path($namespace);
+        foreach ($namespaces as $namespace) {
+            $namespace = trim($namespace, '\\');
+            $namespacePath = get_namespace_path($namespace);
 
-                if (!$namespacePath || !file_exists($namespacePath)) {
+            if (!$namespacePath || !file_exists($namespacePath)) {
+                continue;
+            }
+
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($namespacePath),
+                RecursiveIteratorIterator::LEAVES_ONLY
+            );
+
+            foreach ($iterator as $file) {
+                if (
+                    !$file->isFile() ||
+                    $file->getExtension() !== 'php' ||
+                    $file->getFilename() === 'BaseModel.php'
+                ) {
                     continue;
                 }
 
-                $iterator = new RecursiveIteratorIterator(
-                    new RecursiveDirectoryIterator($namespacePath),
-                    RecursiveIteratorIterator::LEAVES_ONLY
+                $relativePath = str_replace($namespacePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+
+                $classPath = str_replace(
+                    [DIRECTORY_SEPARATOR, '.php'],
+                    ['\\', ''],
+                    $relativePath
                 );
 
-                foreach ($iterator as $file) {
-                    if (
-                        !$file->isFile() ||
-                        $file->getExtension() !== 'php' ||
-                        $file->getFilename() === 'BaseModel.php'
-                    ) {
-                        continue;
-                    }
+                $className = $namespace . '\\' . $classPath;
 
-                    $relativePath = str_replace($namespacePath . DIRECTORY_SEPARATOR, '', $file->getPathname());
-
-                    $classPath = str_replace(
-                        [DIRECTORY_SEPARATOR, '.php'],
-                        ['\\', ''],
-                        $relativePath
-                    );
-
-                    $className = $namespace . '\\' . $classPath;
-
-                    if (!class_exists($className)) {
-                        continue;
-                    }
-
-                    $reflection = new ReflectionClass($className);
-
-                    if (
-                        !$reflection->isInstantiable() ||
-                        !$reflection->isSubclassOf(\Illuminate\Database\Eloquent\Model::class)
-                    ) {
-                        continue;
-                    }
-
-                    $modelName = class_basename($className);
-                    $modelClasses[$modelName] = $className;
+                if (!class_exists($className)) {
+                    continue;
                 }
-            }
 
-            return $modelClasses;
-        });
+                $reflection = new ReflectionClass($className);
+
+                if (
+                    !$reflection->isInstantiable() ||
+                    !$reflection->isSubclassOf(\Illuminate\Database\Eloquent\Model::class)
+                ) {
+                    continue;
+                }
+
+                $modelName = class_basename($className);
+                $modelClasses[$modelName] = $className;
+            }
+        }
+
+        return $modelClasses;
     }
 }
 
@@ -783,7 +776,7 @@ if (! function_exists('register_global_observers')) {
         $activeNamespace = file_exists($derivedPath) ? $derivedNamespace : $defaultNamespace;
         $activePath = file_exists($derivedPath) ? $derivedPath : $defaultPath;
 
-        static $registered = [];
+        // static $registered = [];
 
         if (file_exists($activePath)) {
             $iterator = new RecursiveIteratorIterator(

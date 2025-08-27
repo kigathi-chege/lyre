@@ -30,6 +30,13 @@ class CacheModelClasses extends Command
         // Clear the cache for model classes
         cache()->forget('app_model_classes');
 
+        $defaultNamespaces = config('lyre.path.model', ['App\\Models']);
+
+        foreach ($defaultNamespaces as $namespace) {
+            logger("Clearing old model classes cache for namespace: {$namespace}...");
+            cache()->forget("app_model_classes:{$namespace}");
+        }
+
         $this->comment('Old model classes cache cleared.');
 
         // Re-cache the model classes
