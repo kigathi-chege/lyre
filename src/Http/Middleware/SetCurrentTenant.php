@@ -21,8 +21,13 @@ class SetCurrentTenant
     {
         $user = Auth::user();
 
-        if ($user && method_exists($user, 'tenants')) {
-            logger("Setting current tenant for user", [$user->toArray()]);
+        if (!$user) {
+            logger("User is not authenticated. Skipping tenant setup.");
+            return $next($request);
+        }
+
+        if (method_exists($user, 'tenants')) {
+            logger("Checking tenant for user {$user->id} - {$user->name}");
 
             $tenant = $user->tenants()->first();
 
@@ -39,12 +44,13 @@ class SetCurrentTenant
                 // $tenantId = $request->header('X-Tenant-ID') ?? $request->cookie('tenant_id') ?? $tenant->id;
 
                 app()->instance('tenant', $tenant);
+            } else {
+                logger("No tenant found for user.");
             }
         } else {
-            logger("No tenant found for user or user is not authenticated. Skipping tenant setup.");
+            logger("Tenancy is not enabled.");
             App::forgetInstance('tenant');
         }
-
 
         return $next($request);
     }
