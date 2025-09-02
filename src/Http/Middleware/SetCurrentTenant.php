@@ -26,6 +26,13 @@ class SetCurrentTenant
             return $next($request);
         }
 
+        self::setCurrentTenant($user);
+
+        return $next($request);
+    }
+
+    public static function setCurrentTenant($user)
+    {
         if (method_exists($user, 'tenants')) {
             logger("Checking tenant for user {$user->id} - {$user->name}");
 
@@ -51,7 +58,5 @@ class SetCurrentTenant
             logger("Tenancy is not enabled.");
             App::forgetInstance('tenant');
         }
-
-        return $next($request);
     }
 }
