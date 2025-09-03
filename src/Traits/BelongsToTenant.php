@@ -50,7 +50,7 @@ trait BelongsToTenant
         $tenantClass = app()->make(Tenant::class)::class;
 
         if (! $tenant instanceof $tenantClass) {
-            $tenant = $tenantClass::findOrFail($tenant);
+            $tenant = $tenantClass::findOrFail($tenant->id);
         }
 
         $this->tenantAssociations()->firstOrCreate([
