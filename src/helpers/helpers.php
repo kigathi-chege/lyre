@@ -973,6 +973,7 @@ if (!function_exists('get_table_foreign_columns')) {
 if (!function_exists('resolve_from_resource')) {
     function resolve_from_resource($resource)
     {
+        // TODO: Kigathi - September 5 2025 - Should implement __destruct on repository to ensure we can add a ->resolve chain to do this automatically
         return json_decode(response()->json($resource)->getContent());
     }
 }
