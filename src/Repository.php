@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Config;
 
 class Repository implements RepositoryInterface
 {
+    // TODO: Kigathi - September 5 2035 - Should implement concerns strategy to prevent bloating this file
+
     protected $model;
     protected $relations = [];
     protected $columnFilters = [];
@@ -45,9 +47,19 @@ class Repository implements RepositoryInterface
         $this->resource = Lyre::getModelResource($this->model);
     }
 
+    public function getModel()
+    {
+        return $this->model;
+    }
+
+    public function getQuery()
+    {
+        return $this->model->query();
+    }
+
     public function buildQuery(array | null $callbacks = [], $paginate = true)
     {
-        $query = $this->model->query();
+        $query = $this->getQuery();
         $query = $this->prepareQuery($query);
         $query = $this->linkRelations($query);
         $query = $this->applyColumnFilters($query);
@@ -97,7 +109,7 @@ class Repository implements RepositoryInterface
 
     public function find($arguments, array | null $callbacks = [])
     {
-        $query = $this->model->query();
+        $query = $this->getQuery();
         $query = $this->prepareQuery($query);
 
         if (!is_array($arguments)) {
@@ -124,6 +136,32 @@ class Repository implements RepositoryInterface
         }
         return $this->resource ? new $this->resource($resource) : $query->first();
     }
+
+    public function findAny(array ...$conditions)
+    {
+        $query = $this->getQuery();
+        $query = $this->prepareQuery($query);
+
+        foreach ($conditions as $index => $condition) {
+            $query = $this->filter($query, $condition, $index > 0);
+        }
+
+        $query = $this->linkRelations($query);
+        $query = $this->performOperations($query);
+        $query = $this->applyWithCount($query);
+
+        $resource = $query->first();
+
+        if (!$resource) {
+            if ($this->silent) {
+                return null;
+            }
+            throw CommonException::fromMessage("{$this->model->getTable()} not found");
+        }
+
+        return $this->resource ? new $this->resource($resource) : $resource;
+    }
+
 
     public function applyCallbacks($query, array | null $callbacks = [])
     {
@@ -199,7 +237,7 @@ class Repository implements RepositoryInterface
 
     public function delete($slug)
     {
-        $query = $this->model->query();
+        $query = $this->getQuery();
 
         if (!is_array($slug)) {
             $slug = [$slug];
@@ -369,13 +407,15 @@ class Repository implements RepositoryInterface
         return $this;
     }
 
-    public function filter($query, $arguments)
+    public function filter($query, $arguments, $disjunct = false)
     {
         $arguments = $this->sanitizeArguments($arguments);
-        if (!empty($arguments)) {
-            $query->where($arguments);
+
+        if (empty($arguments)) {
+            return $query;
         }
-        return $query;
+
+        return $disjunct ? $query->orWhere($arguments) : $query->where($arguments);
     }
 
     public function search($query)

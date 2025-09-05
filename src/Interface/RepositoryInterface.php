@@ -4,9 +4,12 @@ namespace Lyre\Interface;
 
 interface RepositoryInterface
 {
+    public function getModel();
+    public function getQuery();
     public function all(array | null $callbacks = [], $paginate = true);
     public function trashed();
     public function find($arguments, array | null $callbacks = []);
+    public function findAny(array ...$conditions);
     public function latest();
     public function create(array $data);
     public function update(array $data, string | int $slug, $thisModel = null);
@@ -22,7 +25,7 @@ interface RepositoryInterface
     public function rangeFilters(array $filters);
     public function relationFilters(array $relationFilters);
     public function searchQuery(array $searchQuery);
-    public function filter($query, $arguments);
+    public function filter($query, $arguments, $disjunct = false);
     public function applyColumnFilters($query);
     public function applyRangeFilters($query);
     public function applyRelationFilters($query);

@@ -968,3 +968,11 @@ if (!function_exists('get_table_foreign_columns')) {
         return array_values(array_unique($columns));
     }
 }
+
+
+if (!function_exists('resolve_from_resource')) {
+    function resolve_from_resource($resource)
+    {
+        return json_decode(response()->json($resource)->getContent());
+    }
+}
