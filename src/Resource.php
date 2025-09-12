@@ -102,14 +102,9 @@ class Resource extends JsonResource
     public static function serializableColumns($resource)
     {
         $custom = $resource->resolveCustomColumns();
-
-        $baseColumns = $resource->getFillableAttributes();
-
-        if (empty($baseColumns)) {
-            $baseColumns = Schema::getColumnListing($resource->getTable());
-        }
-
-        $baseColumns = array_merge($baseColumns, $custom);
+        $fillableColumns = $resource->getFillableAttributes();
+        $columnListing = Schema::getColumnListing($resource->getTable());
+        $baseColumns = array_merge($fillableColumns, $columnListing, $custom);
 
         $columnsToSet = $resource->getIncluded();
         $columnsToUnset = $resource->getExcluded();

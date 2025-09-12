@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Pluralizer;
+use Illuminate\Support\Str;
 use Lyre\Request as BaseRequest;
 use Lyre\Traits\BaseControllerTrait;
 
@@ -76,6 +77,10 @@ class Controller extends BaseController
         $validatedData = $this->validateData($request);
         if ($scope) {
             $scopeName = $this->extractScopeFromRouteName();
+
+            // NOTE: Kigathi - September 11 2025 - This assumes that all relationship columns are in singular form
+            $scopeName = Str::singular($scopeName);
+
             $scopedResource = $this->getScopedResource($scope, $scopeName);
             $validatedData["{$scopeName}_id"] = $scopedResource->resource->id;
         }
@@ -171,16 +176,29 @@ class Controller extends BaseController
         return $request->post();
     }
 
-    private function extractScopeFromRouteName()
+    public function extractScopeFromRouteName()
     {
         $routeName = Route::currentRouteName();
         $segments = explode('.', $routeName);
         return $segments[0] ?? null;
     }
 
-    private function getScopedResource($scope, $scopeName)
+    public function getScopedResource($scope, $scopeName)
     {
-        $repositoryInterface = config("models")[$scopeName]['repository-interface'];
+        // NOTE: Kigathi - September 11 2025 - This assumes that all scoped model resources are related to their path parameter names distinctly
+
+        $classBase = Str::studly(Str::singular($scopeName));
+        $scopedModelClass = null;
+
+        foreach (config('lyre.path.model', []) as $namespace) {
+            $class = $namespace . '\\' . $classBase;
+
+            if (class_exists($class)) {
+                $scopedModelClass = $class;
+            }
+        }
+
+        $repositoryInterface = ltrim($scopedModelClass::getRepositoryInterfaceConfig(), '\\');
         $repository = app()->make($repositoryInterface);
         $scopedResource = $repository->find(['id' => $scope]);
         return $scopedResource;
@@ -189,6 +207,10 @@ class Controller extends BaseController
     private function getScopeCallback($scope)
     {
         $scopeName = $this->extractScopeFromRouteName();
+
+        // NOTE: Kigathi - September 11 2025 - This assumes that all relationship columns are in singular form
+        $scopeName = Str::singular($scopeName);
+
         $scopedResource = $this->getScopedResource($scope, $scopeName);
         $scopeId = $scopedResource->resource->id;
         return fn($query) => $query->where("{$scopeName}_id", $scopeId);
