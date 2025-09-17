@@ -5,6 +5,7 @@ namespace Lyre\Interface;
 interface RepositoryInterface
 {
     public function getModel();
+    public function getResource();
     public function getQuery();
     public function all(array | null $callbacks = [], $paginate = true);
     public function trashed();

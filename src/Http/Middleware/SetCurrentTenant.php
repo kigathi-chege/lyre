@@ -22,7 +22,6 @@ class SetCurrentTenant
         $user = Auth::user();
 
         if (!$user) {
-            logger("User is not authenticated. Skipping tenant setup.");
             return $next($request);
         }
 
@@ -34,13 +33,9 @@ class SetCurrentTenant
     public static function setCurrentTenant($user)
     {
         if (method_exists($user, 'tenants')) {
-            logger("Checking tenant for user {$user->id} - {$user->name}");
-
             $tenant = $user->tenants()->first();
 
             if ($tenant) {
-                logger("Setting current tenant to {$tenant?->id} - {$tenant?->name}");
-
                 $usingSpatieRoles = in_array(\Spatie\Permission\Traits\HasRoles::class, class_uses(\App\Models\User::class));
 
                 if ($usingSpatieRoles) {
@@ -51,11 +46,8 @@ class SetCurrentTenant
                 // $tenantId = $request->header('X-Tenant-ID') ?? $request->cookie('tenant_id') ?? $tenant->id;
 
                 app()->instance('tenant', $tenant);
-            } else {
-                logger("No tenant found for user.");
             }
         } else {
-            logger("Tenancy is not enabled.");
             App::forgetInstance('tenant');
         }
     }

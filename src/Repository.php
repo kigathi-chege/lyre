@@ -52,6 +52,11 @@ class Repository implements RepositoryInterface
         return $this->model;
     }
 
+    public function getResource()
+    {
+        return $this->resource;
+    }
+
     public function getQuery()
     {
         return $this->model->query();
@@ -185,6 +190,11 @@ class Repository implements RepositoryInterface
     public function create(array $data)
     {
         $thisModel = $this->model->create($data);
+
+        if (tenant()) {
+            $thisModel->associateWithTenant(tenant());
+        }
+
         return $this->resource ? new $this->resource($thisModel) : $thisModel;
     }
 
