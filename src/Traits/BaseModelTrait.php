@@ -2,9 +2,12 @@
 
 namespace Lyre\Traits;
 
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 trait BaseModelTrait
 {
-    use CanIncludeColumns, BelongsToTenant;
+    use CanIncludeColumns, BelongsToTenant, LogsActivity;
 
     const ID_COLUMN = 'id';
     const NAME_COLUMN = 'name';
@@ -217,5 +220,18 @@ trait BaseModelTrait
     public static function resolveRepository()
     {
         return app(ltrim(static::getRepositoryInterfaceConfig(), '\\'));
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        if (config('lyre.activity-log')) {
+            return LogOptions::defaults()
+                ->logAll()
+                ->logOnlyDirty();
+        }
+
+        // TODO: Kigathi - October 6 2025 - Haven't figured out how to turn off activity log if not activated in the config
+        return LogOptions::defaults()
+            ->logOnly([]);
     }
 }
