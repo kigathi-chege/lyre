@@ -130,5 +130,11 @@ return [
         'repository-interface' => \Lyre\Settings\Contracts\SettingRepositoryInterface::class,
         'policy' => \Lyre\Settings\Policies\SettingPolicy::class,
         'resource' => \Lyre\Settings\Http\Resources\Setting::class,
-    ]
+    ],
+
+    /**
+     * Table prefix
+     * This is used to prefix all lyre tables in the database.
+     */
+    'table_prefix' => 'lyre_',
 ];

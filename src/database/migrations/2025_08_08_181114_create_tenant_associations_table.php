@@ -11,16 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tenant_associations', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-            $table->morphs('tenantable');
-            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
-            $table->unique(
-                ['tenantable_type', 'tenantable_id', 'tenant_id'],
-                'tenant_associations_unique_tenantable_tenant_id'
-            );
-        });
+        $prefix = config('lyre.table_prefix');
+        $tableName = $prefix . 'tenant_associations';
+
+        if (!Schema::hasTable($tableName)) {
+            Schema::create($tableName, function (Blueprint $table) use ($tableName, $prefix) {
+                $table->id();
+                $table->timestamps();
+                $table->morphs('tenantable');
+                $table->foreignId('tenant_id')->constrained($prefix . 'tenants')->cascadeOnDelete();
+                $table->unique(
+                    ['tenantable_type', 'tenantable_id', 'tenant_id'],
+                    'tenant_associations_unique_tenantable_tenant_id'
+                );
+            });
+        }
     }
 
     /**

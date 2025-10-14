@@ -8,6 +8,32 @@ use Lyre\Exceptions\CommonException;
 use Lyre\Resource;
 use Symfony\Component\HttpFoundation\Response;
 
+if (!function_exists('basic_fields')) {
+    function basic_fields(Illuminate\Database\Schema\Blueprint $table, $tableName)
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'id')) {
+            $table->id();
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'created_at') && !\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'updated_at')) {
+            $table->timestamps();
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'link')) {
+            $table->string('link')->nullable();
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'slug')) {
+            $table->string('slug')->unique()->index();
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'description')) {
+            $table->text('description')->nullable();
+        }
+        if (!\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'metadata')) {
+            $connection = Schema::getConnection();
+            $driver = $connection->getDriverName();
+            $table->{$driver === 'pgsql' ? 'jsonb' : 'json'}('metadata')->nullable()->comment('The metadata of the transaction');
+        }
+    }
+}
+
 if (! function_exists("international_format_phone")) {
     function international_format_phone($phoneNumber, $countrycode = "254")
     {
@@ -255,8 +281,6 @@ if (! function_exists('get_model_permission_by_prefix')) {
             $prefix = str_replace('_', '-', $prefix);
             return "{$prefix}-{$tableName}";
         }
-
-        throw CommonException::fromMessage('Permission not found');
     }
 }
 

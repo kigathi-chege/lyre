@@ -11,4 +11,11 @@ class Model extends BaseModel
     use HasFactory, BaseModelTrait;
 
     protected $guarded = ['id'];
+
+    public function __construct(array $attributes = [])
+    {
+        $this->table = config('lyre.table_prefix') . $this->table;
+
+        parent::__construct($attributes);
+    }
 }
