@@ -1001,3 +1001,26 @@ if (!function_exists('resolve_from_resource')) {
         return json_decode(response()->json($resource)->getContent());
     }
 }
+
+/**
+ * Get the user model.
+ *
+ * @return string
+ */
+if (!function_exists('get_user_model')) {
+    function get_user_model()
+    {
+        return config('lyre.user_model', \App\Models\User::class);
+    }
+}
+
+if (! function_exists('is_json')) {
+    function is_json($string): bool
+    {
+        if (! is_string($string)) {
+            return false;
+        }
+        json_decode($string);
+        return json_last_error() === JSON_ERROR_NONE;
+    }
+}

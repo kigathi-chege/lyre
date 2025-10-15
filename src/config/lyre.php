@@ -137,4 +137,10 @@ return [
      * This is used to prefix all lyre tables in the database.
      */
     'table_prefix' => 'lyre_',
+
+    /**
+     * User model
+     * This is used to configure the User model.
+     */
+    'user_model' => \App\Models\User::class,
 ];

@@ -4,6 +4,7 @@ namespace Lyre;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model as BaseModel;
+use Illuminate\Support\Str;
 use Lyre\Traits\BaseModelTrait;
 
 class Model extends BaseModel
@@ -12,10 +13,19 @@ class Model extends BaseModel
 
     protected $guarded = ['id'];
 
-    public function __construct(array $attributes = [])
+    /**
+     * Get the table associated with the model.
+     *
+     * @return string
+     */
+    public function getTable()
     {
-        $this->table = config('lyre.table_prefix') . $this->table;
+        $tableName = Str::snake(Str::pluralStudly(class_basename($this)));
+        $isLyreModel = Str::startsWith(static::class, 'Lyre\\');
+        if ($isLyreModel) {
+            return config('lyre.table_prefix') . $tableName;
+        }
 
-        parent::__construct($attributes);
+        return $tableName;
     }
 }

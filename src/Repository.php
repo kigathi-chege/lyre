@@ -118,11 +118,29 @@ class Repository implements RepositoryInterface
         $query = $this->prepareQuery($query);
 
         if (!is_array($arguments)) {
+            $table = $this->model->getTable();
             $idColumn = get_model_id_column($this->model);
-            $query = $this->model->where($idColumn, $arguments);
+            $query = $this->model->newQuery();
 
-            if (Schema::hasColumn($this->model->getTable(), 'slug')) {
+            // 🧠 Determine the column type from the database schema
+            $columnType = Schema::getColumnType($table, $idColumn);
+
+            // If it's an integer/bigint column and $arguments is numeric
+            if (in_array($columnType, ['integer', 'bigint', 'smallint']) && is_numeric($arguments)) {
+                $query->where($idColumn, $arguments);
+            }
+            // If it's a UUID/text column — or a string argument
+            elseif (in_array($columnType, ['uuid', 'string', 'char', 'varchar', 'text'])) {
+                $query->where($idColumn, $arguments);
+            }
+
+            // 🔁 Optionally search slug/uuid as fallbacks
+            if (Schema::hasColumn($table, 'slug')) {
                 $query->orWhere('slug', $arguments);
+            }
+
+            if (Schema::hasColumn($this->model->getTable(), 'uuid')) {
+                $query->orWhere('uuid', $arguments);
             }
         } else {
             $query = $this->filter($query, $arguments);
@@ -137,9 +155,11 @@ class Repository implements RepositoryInterface
             if ($this->silent) {
                 return null;
             }
-            throw CommonException::fromMessage("{$this->model->getTable()} not found");
+            throw CommonException::fromMessage(
+                class_basename($this->model) . " not found for arguments: " . json_encode($arguments)
+            );
         }
-        return $this->resource ? new $this->resource($resource) : $query->first();
+        return $this->resource ? new $this->resource($resource) : $resource;
     }
 
     public function findAny(array ...$conditions)
@@ -166,7 +186,6 @@ class Repository implements RepositoryInterface
 
         return $this->resource ? new $this->resource($resource) : $resource;
     }
-
 
     public function applyCallbacks($query, array | null $callbacks = [])
     {

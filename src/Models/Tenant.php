@@ -3,7 +3,6 @@
 namespace Lyre\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\User;
 use Illuminate\Support\Str;
 use Lyre\Model;
 
@@ -11,9 +10,20 @@ class Tenant extends Model
 {
     use HasFactory;
 
+    /**
+     * Get the table associated with the model.
+     *
+     * @return string
+     */
+    public function getTable()
+    {
+        // NOTE: Kigathi - October 15 2025 - This is necessary because the Tenant model is sometimes overridden in the app.
+        return config('lyre.table_prefix') . Str::snake(Str::pluralStudly(class_basename($this)));
+    }
+
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(get_user_model());
     }
 
     /**
