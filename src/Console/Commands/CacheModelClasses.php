@@ -1,9 +1,14 @@
 <?php
 
-namespace Lyre\Console\Commands;
+namespace Lyre\Strings\Console\Commands;
 
 use Illuminate\Console\Command;
 
+/**
+ * Command to cache model classes.
+ * 
+ * @package Lyre\Strings\Console\Commands
+ */
 class CacheModelClasses extends Command
 {
     /**
@@ -11,39 +16,32 @@ class CacheModelClasses extends Command
      *
      * @var string
      */
-    protected $signature = 'cache:model-classes';
+    protected $signature = 'strings:cache-models';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'This command is used to clear model classes cache and re-cache model classes for faster access.';
+    protected $description = 'Cache all model classes for better performance';
 
     /**
      * Execute the console command.
+     *
+     * @return int
      */
-    public function handle()
+    public function handle(): int
     {
-        $this->info('Clearing old model classes cache...');
+        $this->info('Caching model classes...');
 
-        // Clear the cache for model classes
+        // Clear existing cache
         cache()->forget('app_model_classes');
 
-        $defaultNamespaces = config('lyre.path.model', ['App\\Models']);
+        // Regenerate cache
+        app(\Lyre\Strings\Services\Model\ModelService::class)->getModelClasses();
 
-        foreach ($defaultNamespaces as $namespace) {
-            logger("Clearing old model classes cache for namespace: {$namespace}...");
-            cache()->forget("app_model_classes:{$namespace}");
-        }
+        $this->info('Model classes cached successfully!');
 
-        $this->comment('Old model classes cache cleared.');
-
-        // Re-cache the model classes
-        $this->info('Re-caching model classes...');
-
-        get_model_classes();
-
-        $this->info('Model classes re-cached successfully!');
+        return 0;
     }
 }

@@ -40,9 +40,9 @@ class LyreServiceProvider extends ServiceProvider
             CacheModelClasses::class,
         ]);
 
-        require_once base_path('vendor/lyre/lyre/src/helpers/helpers.php');
+        require_once base_path('vendor/lyre/lyre/helpers/helpers.php');
         $this->mergeConfigFrom(
-            base_path('vendor/lyre/lyre/src/config/response-codes.php'),
+            base_path('vendor/lyre/lyre/config/response-codes.php'),
             'response-codes'
         );
 
@@ -70,11 +70,11 @@ class LyreServiceProvider extends ServiceProvider
         register_global_observers("Lyre\\Models");
 
         $this->publishes([
-            __DIR__ . '/../config/lyre.php' => config_path('lyre.php'),
+            __DIR__ . '/config/lyre.php' => config_path('lyre.php'),
         ]);
 
         $this->publishesMigrations([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__ . '/database/migrations' => database_path('migrations'),
         ]);
 
         // $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');

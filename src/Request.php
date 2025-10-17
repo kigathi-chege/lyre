@@ -1,23 +1,36 @@
 <?php
 
-namespace Lyre;
+namespace Lyre\Strings;
 
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Http\Response;
 
+/**
+ * Base request class for the Strings package.
+ * 
+ * This class extends Laravel's FormRequest to provide
+ * additional functionality for the Strings package.
+ * 
+ * @package Lyre\Strings
+ */
 class Request extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-    public function failedValidation(Validator $validator)
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array
+     */
+    public function rules(): array
     {
-        throw new HttpResponseException(
-            __response(false, "Validation Errors", $validator->errors(), Response::HTTP_UNPROCESSABLE_ENTITY)
-        );
+        return [];
     }
 }

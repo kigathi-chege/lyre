@@ -1,25 +1,46 @@
 <?php
 
-namespace Lyre\Exceptions;
+namespace Lyre\Strings\Exceptions;
 
 use Exception;
 
+/**
+ * Common exception class for the Strings package.
+ * 
+ * This exception class provides standardized exception handling
+ * with support for error codes and messages.
+ * 
+ * @package Lyre\Strings\Exceptions
+ */
 class CommonException extends Exception
 {
-    public static function fromCode($code, $arguments = [])
+    /**
+     * Create a new exception from a message.
+     *
+     * @param string $message
+     * @param int $code
+     * @param \Throwable|null $previous
+     * @return static
+     */
+    public static function fromMessage(string $message, int $code = 0, \Throwable $previous = null): static
     {
-        $message = trans("errors.{$code}", $arguments);
-        return new static($message, $code);
+        return new static($message, $code, $previous);
     }
 
-    public static function of($code, $arguments = [])
+    /**
+     * Create a new exception from an error code.
+     *
+     * @param int $code
+     * @param array $context
+     * @return static
+     */
+    public static function fromCode(int $code, array $context = []): static
     {
-        $message = trans("errors.{$code}", $arguments);
-        return new static($message, is_numeric($code) ? $code : 417);
-    }
+        $message = "Error code: {$code}";
+        if (!empty($context)) {
+            $message .= " - Context: " . json_encode($context);
+        }
 
-    public static function fromMessage($message, $code = 500)
-    {
         return new static($message, $code);
     }
 }

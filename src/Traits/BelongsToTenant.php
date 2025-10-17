@@ -1,80 +1,37 @@
 <?php
 
-namespace Lyre\Traits;
+namespace Lyre\Strings\Traits;
 
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use Lyre\Models\Tenant;
-use Lyre\Models\TenantAssociation;
-
+/**
+ * Trait for handling tenant relationships.
+ * 
+ * This trait provides methods for managing tenant associations
+ * in multi-tenant applications.
+ * 
+ * @package Lyre\Strings\Traits
+ */
 trait BelongsToTenant
 {
-    // public static function bootBelongsToTenant()
-    // {
-    //     static::addGlobalScope('tenant', function (Builder $query) {
-    //         $tenantModel = tenant();
-
-    //         if (! $tenantModel) {
-    //             logger("No tenant found, skipping tenant scope for model " . static::class);
-    //             return;
-    //         }
-
-    //         $tenantId = $tenantModel?->id;
-
-    //         logger("Applying tenant scope with ID: {$tenantId} for model " . static::class);
-
-    //         if ($tenantId) {
-    //             logger("Tenant ID found: {$tenantId}, applying scope...");
-    //             $query->whereHas('tenants', function ($q) use ($tenantId) {
-    //                 $q->where('tenants.id', $tenantId);
-    //             });
-    //         }
-
-    //         logger("Tenant scope applied to query: " . $query->toSql());
-    //     });
-    // }
-
-    public function scopeForCurrentTenant($query)
+    /**
+     * Associate model with tenant.
+     *
+     * @param mixed $tenant
+     * @return void
+     */
+    public function associateWithTenant($tenant): void
     {
-        // TODO: Kigathi - August 14 2025 - Should only check role if user model implements `hasRole` method
-        if (auth()->user()->hasRole(config('lyre.super-admin'))) {
-            return $query; // no restriction
+        if (method_exists($this, 'tenant')) {
+            $this->tenant()->associate($tenant);
         }
-
-        return $query->whereHas('associatedTenants', function ($q) {
-            $q->where('tenants.id', tenant()->id);
-        });
     }
 
-    public function associateWithTenant(Tenant $tenant): void
+    /**
+     * Get the tenant relationship.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function tenant()
     {
-        $tenantClass = app()->make(Tenant::class)::class;
-
-        if (! $tenant instanceof $tenantClass) {
-            $tenant = $tenantClass::findOrFail($tenant->id);
-        }
-
-        $this->tenantAssociations()->firstOrCreate([
-            'tenant_id' => $tenant->id,
-        ]);
-    }
-
-    public function tenantAssociations()
-    {
-        return $this->morphMany(TenantAssociation::class, 'tenantable');
-    }
-
-    public function associatedTenants(): MorphToMany
-    {
-        $tenantClass = app()->make(Tenant::class)::class;
-
-        return $this->morphToMany(
-            $tenantClass,
-            'tenantable',              // morph name (based on tenantable_id / tenantable_type in TenantAssociation)
-            'tenant_associations',     // pivot table
-            'tenantable_id',           // FK to your model
-            'tenant_id'                 // FK to Tenant
-        )
-            ->using(TenantAssociation::class)
-            ->withTimestamps();
+        return $this->belongsTo(config('lyre.tenancy.model', \Lyre\Strings\Models\Tenant::class));
     }
 }

@@ -1,36 +1,44 @@
 <?php
 
-namespace Lyre\Console\Commands;
+namespace Lyre\Strings\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Command to truncate database tables.
+ * 
+ * @package Lyre\Strings\Console\Commands
+ */
 class TruncateTableCommand extends Command
 {
-    protected $signature = 'lyre:truncate
-                            {model : The name of the model}';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'strings:truncate {table}';
 
-    protected $description = "This command truncates a model's table";
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Truncate a database table';
 
-    public function handle()
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
+    public function handle(): int
     {
-        $arguments = $this->arguments();
-        $modelName = $arguments['model'];
-        $modelClass = config('lyre.model-path') . $modelName;
+        $table = $this->argument('table');
 
-        if (!class_exists($modelClass)) {
-            $this->error("Model class {$modelClass} does not exist.");
-            return 1;
-        }
-
-        $modelInstance = new $modelClass;
-
-        try {
-            DB::table($modelInstance->getTable())->truncate();
-            $this->info("Table for model {$modelName} has been truncated successfully.");
-        } catch (\Exception $e) {
-            $this->error("Failed to truncate the table: " . $e->getMessage());
-            return 1;
+        if ($this->confirm("Are you sure you want to truncate the {$table} table?")) {
+            \Illuminate\Support\Facades\DB::table($table)->truncate();
+            $this->info("Table {$table} truncated successfully!");
+        } else {
+            $this->info('Operation cancelled.');
         }
 
         return 0;

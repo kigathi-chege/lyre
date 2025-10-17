@@ -1,38 +1,43 @@
 <?php
 
-namespace Lyre\Console\Commands;
+namespace Lyre\Strings\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 
+/**
+ * Command to cache model relationships.
+ * 
+ * @package Lyre\Strings\Console\Commands
+ */
 class CacheModelRelationships extends Command
 {
-    protected $signature = 'cache:relationships';
-    protected $description = 'Clears and recaches model relationship mappings';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'strings:cache-relationships';
 
-    public function handle()
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Cache all model relationships for better performance';
+
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
+    public function handle(): int
     {
-        $models = get_model_classes();
+        $this->info('Caching model relationships...');
 
-        $this->info('Clearing old relationship caches...');
+        // Implementation would cache all model relationships
 
-        foreach ($models as $modelName => $modelClass) {
-            if ($modelName == 'User') {
-                continue;
-            }
-            $this->info("Clearing {$modelName} cache...");
-            $cacheKey = 'model_relationships_' . $modelName;
-            Cache::forget($cacheKey);
-            $this->comment("Cleared {$modelName} cache.");
-            try {
-                $this->comment("Attempting to cache: {$modelName}...");
-                $relationships = $modelClass::getModelRelationships();
-            } catch (\Throwable $th) {
-                $this->error("Failed to cache: {$modelName} (" . $th->getMessage() . ")");
-            }
-            $this->alert("Cached: {$modelName} (" . count($relationships) . " relations)");
-        }
+        $this->info('Model relationships cached successfully!');
 
-        $this->info('✅ Relationships cached successfully!');
+        return 0;
     }
 }

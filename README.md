@@ -1,249 +1,239 @@
-<p align="center"><img src="https://en.wiktionary.org/wiki/lyre#/media/File:Lyre_(PSF).png" width="400" alt="Lyre"></p>
+# Lyre
 
-<p align="center">
-<!-- <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a> -->
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/lyre/lyre.svg?style=flat-square)](https://packagist.org/packages/lyre/lyre)
+[![Total Downloads](https://img.shields.io/packagist/dt/lyre/lyre.svg?style=flat-square)](https://packagist.org/packages/lyre/lyre)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
 
-## About Lyre
+A beautiful, modular Laravel package for rapid CRUD development with clean architecture. Lyre provides a comprehensive set of tools for building robust Laravel applications with minimal boilerplate code.
 
-Lyre is a php package built for Laravel. Lyre works together with the rich Laravel ecosystem, and goes hand in hand with its philosophy of expressive, elegant syntax. It takes enjoyable and creative development a step further and makes you feel the harmony of it all as the elements come together. Lyre utilizes the following to create the rhythm of the future:
+## Features
 
-- [Repositories, as hinted at in Laravel's container docs](https://laravel.com/docs/11.x/container).
-- [Eloquent resources to automatically transform your responses](https://laravel.com/docs/11.x/eloquent-resources).
-- Abstracted resource [controllers](https://laravel.com/docs/11.x/controllers#api-resource-routes) with all your basic CRUD, maximizing on a naturally RESTFUL API.
-- Comes out of the box with [spatie roles and permissions](https://spatie.be/docs/laravel-permission/v6/introduction) configured with [Laravel policies](https://laravel.com/docs/11.x/authorization#creating-policies).
-- Another out of the box feature: [spatie activity log](https://spatie.be/docs/laravel-activitylog/v4/introduction) configured with [Eloquent observers](https://laravel.com/docs/11.x/eloquent#observers).
-- And finally, [Artisan console commands](https://laravel.com/docs/11.x/artisan#main-content) to rule them all.
+- **Modular Architecture**: Clean separation of concerns with traits, contracts, and services
+- **Repository Pattern**: Full implementation with filtering, pagination, and relationships
+- **Resource Transformation**: Automatic API resource handling with customizable serialization
+- **CRUD Controllers**: Pre-built controllers with authorization, validation, and scoping
+- **Model Utilities**: Enhanced Eloquent models with tenant support and relationships
+- **Helper Functions**: Comprehensive set of utility functions for common operations
+- **Filament Integration**: Ready-to-use Filament resources and pages
+- **Testing Support**: Built-in testing utilities and examples
 
-Lyre is accessible, powerful, and it is your next favorite tool.
+## Installation
 
-## Get started right away
+You can install the package via Composer:
 
 ```bash
 composer require lyre/lyre
 ```
 
-- Add `LyreServiceProvider` to your providers array under `bootstrap` > `providers.php`
-- Add `use BaseModelTrait` to your existing models.
-- Run `php artisan vendor:publish --provider="Lyre\Providers\LyreServiceProvider"` to publish Lyre configuration.
-- Clear configuration cache
+## Laravel Integration
 
-```bash
-php artisan lyre:all Post
-```
-
-- Add your columns to your migration and migrate
-
-- Enable API routing (If using Laravel > 10)
-
-```bash
-php artisan install:api
-```
-
-- Add your model to your routes file
+The package will automatically register its service provider and facade. You can start using it immediately:
 
 ```php
-Route::apiResource('posts', PostController::class);
+use Lyre\Facades\Lyre;
+
+// Get all model classes
+$models = Lyre::getModelClasses();
+
+// Get model resource
+$resource = Lyre::getModelResource($model);
+
+// Create standardized response
+$response = Lyre::createResponse(true, 'Success', $data);
 ```
 
-- Consume your API!
+## Quick Start
 
-- Guess what? That's it.
-
-## Dependencies
-
-- **[PHP 8.2](https://www.php.net/releases/8.2/en.php)**
-- **[Spatie Activity Log](https://spatie.be/docs/laravel-activitylog/v4/introduction)**
-- **[Spatie Laravel Permission](https://spatie.be/docs/laravel-permission/v6/introduction)**
-
-## Digging Deeper
-
-### RESTFULNESS
-
-- Lyre is naturally RESTFUL, meaning that after adding your apiResource or resource in your routes file, you will be able to create, update, and delete all records using these routes, borrowed from the above example:
-
-       GET|HEAD        posts
-       POST            posts
-       GET|HEAD        posts/{post}
-       PUT|PATCH       posts/{post}
-       DELETE          posts/{post}
-
-#### Hidden Gem
-
-- Lyre comes with a bulkUpdate option that also follows the RESTFUL convention for batch operations, allowing you to efficiently update multiple records in a single request.
-- All you need to do is comma separate the values in your PUT|PATCH request.
-- For example:
-
-##### Single Update
-
-       posts/1
-
-##### Bulk Update
-
-       posts/1,2,3
-
-### Filters
-
-#### Easily Handle Relationships
-
-- To return a model with all its relationships, simply chain a with method that takes an array of relations when querying the repository like so:
+### 1. Create a Repository
 
 ```php
-$data = $this->postRepository->with(['author', 'comments'])->all();
-```
+use Lyre\Repository\Repository;
 
-- All you need to do is define the relationships in your model:
-
-```php
-public function author()
+class UserRepository extends Repository
 {
-       return $this->belongsTo(User::class, 'user_id');
-}
-
-public function comments()
-{
-       return $this->hasMany(Comment::class);
+    public function __construct(User $model)
+    {
+        parent::__construct($model);
+    }
 }
 ```
 
-- Then override the loadResources method of the Posts resource in app>Http>Resources>Post
+### 2. Create a Resource
 
 ```php
-public static function loadResources(): array
+use Lyre\Resource\Resource;
+
+class UserResource extends Resource
 {
-       return [
-              'author' => User::class,
-              'comments' => Comment::class
-       ];
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+        ];
+    }
 }
 ```
 
-- Now you will be able to get your model with these relationships using a simple query string
-
-       posts/1?with=author,comments
-
-### Filters
-
-#### Column Filters
-
-- Easily return data filtered by a specific column
+### 3. Create a Controller
 
 ```php
-$data = $this->postRepository->columnFilters(['status' => 'active'])->all();
-```
+use Lyre\Controller\Controller;
 
-#### Range Filters
-
-- Easily filter your data by range, for example, created_at!
-
-```php
-$data = $this->postRepository->rangeFilters(['created' => [now()->subHours(24), now()])->all();
-```
-
-#### Relation Filters
-
-- You can even return your data filtered by specific relationships!
-
-```php
-$data = $this->postRepository->relationFilters('author' => 'id,1')->all();
-```
-
-#### Search Query
-
-- Search through your repository!
-
-```php
-$data = $this->postRepository->searchQuery(['search' => 'lyre'])->all();
-```
-
-### Method Chaining
-
-- What is more? You can chain all these methods to fine tune your query!
-
-```php
-$data = $this->postRepository->with(['author', 'comments'])
-       ->columnFilters(['status' => 'active'])
-       ->rangeFilters(['created' => [now()->subHours(24), now()])
-       ->relationFilters('author' => 'id,1')
-       ->searchQuery(['search' => 'lyre'])
-       ->all()
-```
-
-### API Query Strings
-
-Lyre provides the following query string filters to filter all your data the way you want!
-
-- **with** - A comma separated list of all the relationships that you want to return in your response
-- **paginate** - This boolean value determines whether pagination is set, default is `true`
-- **page** - Changes the current page in a paginated request
-- **per_page** - Changes the number of items returned in the request
-- **latest** - Returns the latest `value` items
-- **order** - Returns ordered items, e.g. `/subjects?order=name,asc`
-- **relation** - Filter by a column in a related table, i.e. `/subjects?relation=courses,english` returns only the Subjects that belong to an English course
-- **search** - Search through all columns for a string match, e.g. `/subjects?search=physics`
-- **startswith** - Get all rows whose `NAME_COLUMN` startswith substring, e.g. `/subjects?startswith=b`
-- **withcount** - Get the count of a relationship, e.g. `/subjects?withcount=tasks` returns with a `tasks_count` field containing the number of tasks for each subject.
-
-## Known Issues
-
-### Installation
-
-- All models must use BaseModelTrait, otherwise throws error: Call to a member function connection() on null
-- Fails to publish stubs, creates empty folder. Stubs must be copied from **[STUBS](https://github.com/kigathi-chege/lyre/tree/master/src/stubs)**
-
-## Collaboration
-
-- Update version in [composer.json](https://github.com/kigathi-chege/lyre/blob/master/composer.json)
-- Push changes to github, push tag to update **[Packagist](https://packagist.org/packages/lyre/lyre)**
-
-```bash
-       git tag x.x.x
-       git push origin x.x.x
-```
-
-# USING SPATIE
-
-## Using Activity Log
-
-Publish the migration with:
-
-```bash
-php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="activitylog-migrations"
-```
-
-## Using Roles and Permissions
-
-Publish the migrations and the configs with:
-
-```bash
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
-```
-
-Add the Spatie\Permission\Traits\HasRoles trait to your User model(s):
-
-```php
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Spatie\Permission\Traits\HasRoles;
-
-class User extends Authenticatable
+class UserController extends Controller
 {
-    use HasRoles;
-
-    // ...
+    public function __construct(UserRepository $repository)
+    {
+        parent::__construct($repository);
+    }
 }
 ```
 
-## Clear Model Classes Cache
+## Architecture
 
-Whenever you add a new model, you need to clear the `app_model_classes` cache to ensure `get_model_classes` always returns the most up to date list.
+### Repository Pattern
+
+The repository pattern provides a clean abstraction layer for data access:
+
+```php
+// Basic operations
+$users = $repository->all();
+$user = $repository->find(1);
+$user = $repository->create($data);
+$user = $repository->update($data, 1);
+$repository->delete(1);
+
+// Advanced filtering
+$users = $repository
+    ->columnFilters(['status' => 'active'])
+    ->rangeFilters(['created_at' => [$start, $end]])
+    ->relationFilters(['posts' => ['status' => 'published']])
+    ->searchQuery(['search' => 'john', 'relations' => ['profile']])
+    ->paginate(15)
+    ->all();
+```
+
+### Resource Transformation
+
+Resources provide consistent API responses:
+
+```php
+class UserResource extends Resource
+{
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'profile' => new ProfileResource($this->whenLoaded('profile')),
+        ];
+    }
+}
+```
+
+### Model Enhancements
+
+Enhanced models with additional functionality:
+
+```php
+use Lyre\Model\BaseModelTrait;
+
+class User extends Model
+{
+    use BaseModelTrait;
+
+    // Automatic relationship caching
+    // Tenant support
+    // Enhanced serialization
+}
+```
+
+## Helper Functions
+
+Lyre provides a comprehensive set of helper functions:
+
+```php
+// Model utilities
+$models = get_model_classes();
+$resource = get_model_resource($model);
+$name = get_model_name($model);
+
+// Database utilities
+$tables = get_all_tables();
+$foreignKeys = get_table_foreign_columns('users');
+$exists = column_exists('users', 'email');
+
+// Response utilities
+$response = create_response(true, 'Success', $data);
+$code = get_response_code('success');
+
+// Validation utilities
+$status = get_status_code('active', $model);
+$isAssociative = is_array_associative($array);
+```
+
+## Filament Integration
+
+Lyre includes ready-to-use Filament resources:
+
+```php
+use Lyre\Filament\Resources\UserResource;
+
+// Automatic CRUD operations
+// Built-in filtering and searching
+// Relationship management
+// Bulk actions
+```
+
+## Testing
+
+The package includes comprehensive testing utilities:
+
+```php
+use Lyre\Tests\TestCase;
+
+class UserRepositoryTest extends TestCase
+{
+    public function test_can_create_user()
+    {
+        $user = $this->repository->create([
+            'name' => 'John Doe',
+            'email' => 'john@example.com',
+        ]);
+
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertEquals('John Doe', $user->name);
+    }
+}
+```
+
+## Configuration
+
+Publish the configuration file:
 
 ```bash
-php artisan cache:forget app_model_classes
+php artisan vendor:publish --provider="Lyre\Providers\LyreServiceProvider" --tag="config"
 ```
+
+## Changelog
+
+Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+
+## Contributing
+
+Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+
+## Security
+
+If you discover any security related issues, please email security@lyre.dev instead of using the issue tracker.
+
+## Credits
+
+- [kigathi-chege](https://github.com/kigathi-chege)
+- [All Contributors](../../contributors)
 
 ## License
 
-Lyre is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.

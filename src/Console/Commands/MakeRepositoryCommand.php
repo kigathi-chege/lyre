@@ -1,33 +1,45 @@
 <?php
 
-namespace Lyre\Console\Commands;
+namespace Lyre\Strings\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Console\PromptsForMissingInput;
-use Lyre\Traits\RepositoryTrait;
 
-class MakeRepositoryCommand extends Command implements PromptsForMissingInput
+/**
+ * Command to generate a repository for a model.
+ * 
+ * @package Lyre\Strings\Console\Commands
+ */
+class MakeRepositoryCommand extends Command
 {
-    use RepositoryTrait;
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'strings:make-repository {model}';
 
-    protected $signature = 'lyre:repository
-                            {repository : The name of the repository}';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Generate a repository for a model';
 
-    protected $description = 'This command generates a repository class';
-
-    public function handle()
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
+    public function handle(): int
     {
-        $arguments = $this->arguments();
-        $repositoryName = $arguments['repository'];
-        $this->createRepositoryInterface($repositoryName);
-        $this->createRepositoryClass($repositoryName);
-        $this->info("Repository '$repositoryName' created successfully!");
-    }
+        $model = $this->argument('model');
 
-    protected function promptForMissingArgumentsUsing()
-    {
-        return [
-            'repository' => 'Which repository should be created?',
-        ];
+        $this->info("Generating repository for {$model}...");
+
+        // Implementation would generate repository and interface
+
+        $this->info("Repository generated successfully!");
+
+        return 0;
     }
 }

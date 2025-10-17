@@ -1,22 +1,46 @@
 <?php
 
-namespace Lyre\Models;
+namespace Lyre\Strings\Models;
 
-use Illuminate\Database\Eloquent\Relations\MorphPivot;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Lyre\Traits\BaseModelTrait;
+use Illuminate\Database\Eloquent\Model;
+use Lyre\Strings\Model\BaseModelTrait;
 
-class TenantAssociation extends MorphPivot
+/**
+ * Tenant association model for multi-tenancy support.
+ * 
+ * @package Lyre\Strings\Models
+ */
+class TenantAssociation extends Model
 {
-    use HasFactory, BaseModelTrait;
+    use BaseModelTrait;
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'tenant_id',
+        'model_type',
+        'model_id',
+    ];
 
-    protected $table = 'tenant_associations';
+    protected $casts = [
+        'tenant_id' => 'integer',
+        'model_id' => 'integer',
+    ];
 
-    public $incrementing = true;
+    /**
+     * Get the associated tenant.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 
-    public function tenantable()
+    /**
+     * Get the associated model.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
+     */
+    public function model()
     {
         return $this->morphTo();
     }

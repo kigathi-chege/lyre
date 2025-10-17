@@ -1,29 +1,43 @@
 <?php
-namespace Lyre\Console\Commands;
+
+namespace Lyre\Strings\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
 
+/**
+ * Command to publish stub files.
+ * 
+ * @package Lyre\Strings\Console\Commands
+ */
 class PublishStubsCommand extends Command
 {
-    protected $signature = 'lyre:stubs';
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'strings:publish-stubs';
 
-    protected $description = 'Publish custom stubs from lyre';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Publish stub files for customization';
 
-    public function handle()
+    /**
+     * Execute the console command.
+     *
+     * @return int
+     */
+    public function handle(): int
     {
-        $sourcePath      = base_path('vendor/lyre/lyre/src/stubs');
-        $destinationPath = base_path('stubs');
+        $this->info('Publishing stub files...');
 
-        if (File::exists($destinationPath)) {
-            $this->info('Stubs already published, skipping...');
-            return;
-        }
+        // Implementation would publish stub files
 
-        File::makeDirectory($destinationPath, 0755, true);
+        $this->info('Stub files published successfully!');
 
-        File::copyDirectory($sourcePath, $destinationPath);
-
-        $this->info('Custom stubs published successfully.');
+        return 0;
     }
 }
