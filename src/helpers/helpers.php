@@ -101,7 +101,7 @@ if (! function_exists("__response")) {
 if (! function_exists('generate_slug')) {
     function generate_slug($model)
     {
-        $baseSlug = Str::slug(get_model_name($model));
+        $baseSlug = Str::limit(Str::slug(get_model_name($model)), 120, '');
         $slug     = $baseSlug;
 
         $counter    = 1;

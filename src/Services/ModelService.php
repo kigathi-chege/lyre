@@ -34,50 +34,22 @@ class ModelService
 
     public static function generateSlug($model)
     {
-        $baseSlug = Str::slug(self::getModelName($model));
-        $slug = $baseSlug;
-
-        $counter = 1;
-        $modelClass = get_class($model);
-        do {
-            if ($counter > 1) {
-                $slug = $baseSlug . "-" . Str::random(10);
-            }
-            $counter++;
-            if ($counter > 100) {
-                throw new \RuntimeException("Unable to generate a unique slug.");
-            }
-        } while ($modelClass::where("slug", $slug)->when(
-            $model->id && $modelClass::where("id", $model->id)->exists(),
-            function ($query) use ($model) {
-                return $query->whereNot("id", $model->id);
-            }
-        )->count());
-
-        return $slug;
+        return generate_slug($model);
     }
 
     public static function setSlug($model)
     {
-        $slug = self::generateSlug($model);
-        $model->setAttribute("slug", $slug);
+        set_slug($model);
     }
 
     public static function generateUuid($model)
     {
-        $uuid = Str::uuid();
-        if ($model::where("uuid", $uuid)->exists()) {
-            do {
-                $uuid = Str::uuid();
-            } while ($model::where("uuid", $uuid)->exists());
-        }
-        return $uuid;
+        return generate_uuid($model);
     }
 
     public static function setUuid($model)
     {
-        $uuid = self::generateUuid($model);
-        $model->setAttribute("uuid", $uuid);
+        set_uuid($model);
     }
 
     public static function getModelColumn(array $config, string $column)
