@@ -24,5 +24,6 @@ class MakeAllCommand extends Command
         $this->info("Created a new resource.");
         Artisan::call('lyre:repository', ['repository' => $modelName]);
         $this->info("Created class repository.");
+        Artisan::call('cache:models');
     }
 }

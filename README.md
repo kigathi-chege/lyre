@@ -91,8 +91,10 @@ Route::apiResource('posts', PostController::class);
 
 - To return a model with all its relationships, simply chain a with method that takes an array of relations when querying the repository like so:
 
+- (Note that Lyre automatically creates repository helpers for you so that you do not have to inject or declare repository objects.)
+
 ```php
-$data = $this->postRepository->with(['author', 'comments'])->all();
+$data = postRepository()->with(['author', 'comments'])->all();
 ```
 
 - All you need to do is define the relationships in your model:
@@ -109,7 +111,13 @@ public function comments()
 }
 ```
 
-- Then override the loadResources method of the Posts resource in app>Http>Resources>Post
+- Run this command to automatically detect model relationships:
+
+```bash
+php artisan cache:relationships
+```
+
+- If you need more control, you can always override the loadResources method of the Posts resource in app>Http>Resources>Post
 
 ```php
 public static function loadResources(): array
@@ -132,7 +140,7 @@ public static function loadResources(): array
 - Easily return data filtered by a specific column
 
 ```php
-$data = $this->postRepository->columnFilters(['status' => 'active'])->all();
+$data = postRepository()->columnFilters(['status' => 'active'])->all();
 ```
 
 #### Range Filters
@@ -140,7 +148,7 @@ $data = $this->postRepository->columnFilters(['status' => 'active'])->all();
 - Easily filter your data by range, for example, created_at!
 
 ```php
-$data = $this->postRepository->rangeFilters(['created' => [now()->subHours(24), now()])->all();
+$data = postRepository()->rangeFilters(['created' => [now()->subHours(24), now()])->all();
 ```
 
 #### Relation Filters
@@ -148,7 +156,7 @@ $data = $this->postRepository->rangeFilters(['created' => [now()->subHours(24), 
 - You can even return your data filtered by specific relationships!
 
 ```php
-$data = $this->postRepository->relationFilters('author' => 'id,1')->all();
+$data = postRepository()->relationFilters('author' => 'id,1')->all();
 ```
 
 #### Search Query
@@ -156,7 +164,7 @@ $data = $this->postRepository->relationFilters('author' => 'id,1')->all();
 - Search through your repository!
 
 ```php
-$data = $this->postRepository->searchQuery(['search' => 'lyre'])->all();
+$data = postRepository()->searchQuery(['search' => 'lyre'])->all();
 ```
 
 ### Method Chaining
@@ -164,7 +172,7 @@ $data = $this->postRepository->searchQuery(['search' => 'lyre'])->all();
 - What is more? You can chain all these methods to fine tune your query!
 
 ```php
-$data = $this->postRepository->with(['author', 'comments'])
+$data = postRepository()->with(['author', 'comments'])
        ->columnFilters(['status' => 'active'])
        ->rangeFilters(['created' => [now()->subHours(24), now()])
        ->relationFilters('author' => 'id,1')

@@ -11,7 +11,7 @@ class CacheModelClasses extends Command
      *
      * @var string
      */
-    protected $signature = 'cache:model-classes';
+    protected $signature = 'cache:models';
 
     /**
      * The console command description.

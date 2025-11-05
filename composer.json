@@ -16,7 +16,7 @@
     "laravel 12"
   ],
   "license": "MIT",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "autoload": {
     "files": [
       "src/helpers/helpers.php"
