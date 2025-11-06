@@ -839,10 +839,11 @@ class Repository implements RepositoryInterface
             $this->first();
         }
 
-        // TODO: Kigathi - September 11 2024 - Confirm that this code yields the expected results.
         if (count($requestQueries) > 0) {
             foreach ($requestQueries as $key => $value) {
-                if (!$key == "search-relations") {
+                $modelRelationships = $this->model->getModelRelationships();
+                if (!empty($modelRelationships[$key]) && array_key_exists($key, $modelRelationships)) {
+                    $this->model->load($key);
                     $relatedModel = $this->model->{$key}();
                     $relatedModelClass = get_class($relatedModel->getRelated());
                     $idColumn = $relatedModelClass::ID_COLUMN;
