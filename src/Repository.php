@@ -843,13 +843,15 @@ class Repository implements RepositoryInterface
             foreach ($requestQueries as $key => $value) {
                 $modelRelationships = $this->model->getModelRelationships();
                 if (!empty($modelRelationships[$key]) && array_key_exists($key, $modelRelationships)) {
-                    $this->model->load($key);
+                    if (!$this->model->relationLoaded($key)) {
+                        $this->model->load($key);
+                    }
                     $relatedModel = $this->model->{$key}();
                     $relatedModelClass = get_class($relatedModel->getRelated());
-                    $idColumn = $relatedModelClass::ID_COLUMN;
-                    $idTable = (new $relatedModelClass)->getTable();
+                    $relatedModelIDColumn = $relatedModelClass::ID_COLUMN;
+                    $relatedModelTable = (new $relatedModelClass)->getTable();
                     $result[$key] = [
-                        'column' => "$idTable.$idColumn",
+                        'column' => "$relatedModelTable.$relatedModelIDColumn",
                         'value' => $value,
                     ];
                     $this->relationFilters += $result;
