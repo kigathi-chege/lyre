@@ -31,6 +31,10 @@ class CacheModelRelationships extends Command
                 $this->error("Failed to cache: {$modelName} (" . $th->getMessage() . ")");
             }
             $this->alert("Cached: {$modelName} (" . count($relationships) . " relations)");
+            foreach ($relationships as $relationship => $relatedModel) {
+                $this->info("  - {$relationship} -> {$relatedModel}");
+            }
+            $this->newLine();
         }
 
         $this->info('✅ Relationships cached successfully!');
