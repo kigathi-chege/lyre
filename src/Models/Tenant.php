@@ -41,10 +41,12 @@ class Tenant extends Model
             throw new \InvalidArgumentException('Please provide the model class you want to retrieve.');
         }
 
+        $prefix = config('lyre.table_prefix');
+
         return $this->morphedByMany(
             $modelClass,
             'tenantable',              // same morph name
-            'tenant_associations',     // pivot table
+            $prefix . 'tenant_associations',     // pivot table
             'tenant_id',               // FK to Tenant
             'tenantable_id'             // FK to the model
         )

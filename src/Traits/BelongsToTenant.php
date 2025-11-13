@@ -67,10 +67,12 @@ trait BelongsToTenant
     {
         $tenantClass = app()->make(Tenant::class)::class;
 
+        $prefix = config('lyre.table_prefix');
+
         return $this->morphToMany(
             $tenantClass,
             'tenantable',              // morph name (based on tenantable_id / tenantable_type in TenantAssociation)
-            'tenant_associations',     // pivot table
+            $prefix . 'tenant_associations',     // pivot table
             'tenantable_id',           // FK to your model
             'tenant_id'                 // FK to Tenant
         )

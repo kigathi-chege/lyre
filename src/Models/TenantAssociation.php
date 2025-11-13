@@ -12,9 +12,15 @@ class TenantAssociation extends MorphPivot
 
     protected $guarded = ['id'];
 
-    protected $table = 'tenant_associations';
-
     public $incrementing = true;
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        $prefix = config('lyre.table_prefix');
+        $this->table = $prefix . 'tenant_associations';
+    }
 
     public function tenantable()
     {

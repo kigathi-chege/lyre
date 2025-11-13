@@ -33,6 +33,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tenant_associations');
+        $prefix = config('lyre.table_prefix');
+        $tableName = $prefix . 'tenant_associations';
+        Schema::dropIfExists($tableName);
     }
 };
