@@ -10,11 +10,13 @@ class Observer
     public function creating($model)
     {
         if (Schema::hasColumn($model->getTable(), 'slug')) {
-            Lyre::setSlug($model);
+            // Lyre::setSlug($model);
+            set_slug($model);
         }
 
         if (Schema::hasColumn($model->getTable(), 'uuid')) {
-            Lyre::setUuid($model);
+            // Lyre::setUuid($model);
+            set_uuid($model);
         }
     }
 
@@ -25,13 +27,18 @@ class Observer
                 Lyre::getModelIdColumn($model) === "slug" &&
                 $model->isDirty(Lyre::getModelNameColumn($model))
             ) {
-                Lyre::setSlug($model);
+                // Lyre::setSlug($model);
+                set_slug($model);
             }
         }
     }
 
     public function created($model): void
     {
+        if (tenant()) {
+            $model->associateWithTenant(tenant());
+        }
+
         if (config('lyre.activity-log')) {
             activity('created')
                 ->performedOn($model)

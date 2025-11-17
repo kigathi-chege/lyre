@@ -62,7 +62,7 @@ class RegisterTenant extends \Filament\Pages\Tenancy\RegisterTenant
         if ($subscriptionPlan) {
             $endDate = $subscriptionPlan->trial_days > 0 ? now()->addDays($subscriptionPlan->trial_days) : now()->{$subscriptionPlan->billing_cycle == 'annually' ? 'addYear' : 'addMonth'}();
 
-            Subscription::create([
+            $subscription = Subscription::create([
                 'tenant_id' => $tenant->id,
                 'user_id' => auth()->id(),
                 'subscription_plan_id' => $subscriptionPlan->id,
@@ -71,7 +71,12 @@ class RegisterTenant extends \Filament\Pages\Tenancy\RegisterTenant
                 'end_date' => $endDate,
                 'auto_renew' => true,
             ]);
+
+            $subscription->associateWithTenant($tenant);
         }
+
+        $subscriptionPlan->associateWithTenant($tenant);
+        auth()->user()->associateWithTenant($tenant);
 
         // $domain = $tenant->createDomain([
         //     'domain' => $fqdn,

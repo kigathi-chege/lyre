@@ -99,10 +99,12 @@ if (! function_exists("__response")) {
 }
 
 if (! function_exists('generate_slug')) {
-    function generate_slug($model)
+    function generate_slug($model, $defaultSlug = null)
     {
-        $baseSlug = Str::limit(Str::slug(get_model_name($model)), 120, '');
-        $slug     = $baseSlug;
+        $baseSlug = $defaultSlug ?? Str::limit(Str::slug(get_model_name($model)), 120, '');
+        $slug     = $baseSlug ?? Str::random(10);
+
+        logger("Generating slug for model: " . get_class($model) . " with base slug: " . $baseSlug);
 
         $counter    = 1;
         $modelClass = get_class($model);
@@ -111,6 +113,7 @@ if (! function_exists('generate_slug')) {
                 $slug = $baseSlug . "-" . Str::random(10);
             }
             $counter++;
+            logger("Generating slug for model: " . get_class($model) . " with base slug: " . $baseSlug . " and counter: " . $counter);
             if ($counter > 100) {
                 throw new \RuntimeException("Unable to generate a unique slug.");
             }
@@ -120,6 +123,12 @@ if (! function_exists('generate_slug')) {
                 return $query->whereNot("id", $model->id);
             }
         )->count());
+
+        if ($slug == '') {
+            $slug = generate_slug($model, Str::random(10));
+        }
+
+        logger("Generated slug for model: " . get_class($model) . " with slug: " . $slug);
 
         return $slug;
     }
