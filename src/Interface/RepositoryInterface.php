@@ -13,7 +13,7 @@ interface RepositoryInterface
     public function findAny(array ...$conditions);
     public function latest();
     public function create(array $data);
-    public function createMany(array $data);
+    public function batchCreate(array $data);
     public function update(array $data, string | int $slug, $thisModel = null);
     public function random();
     public function limit(int $limit);

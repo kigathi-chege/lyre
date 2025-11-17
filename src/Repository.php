@@ -217,7 +217,7 @@ class Repository implements RepositoryInterface
         return $this->resource ? new $this->resource($thisModel) : $thisModel;
     }
 
-    public function createMany(array $data)
+    public function batchCreate(array $data)
     {
         $createdItems = [];
 
