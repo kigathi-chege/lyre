@@ -217,6 +217,17 @@ class Repository implements RepositoryInterface
         return $this->resource ? new $this->resource($thisModel) : $thisModel;
     }
 
+    public function createMany(array $data)
+    {
+        $createdItems = [];
+
+        foreach ($data as $item) {
+            $createdItems[] = $this->create($item)->resource;
+        }
+
+        return $this->collectResource(query: $createdItems, paginate: false);
+    }
+
     public function firstOrCreate(array $search, array $data = [])
     {
         $thisModel = $this->model->firstOrCreate($search, $data);
