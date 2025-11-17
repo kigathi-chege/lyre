@@ -47,6 +47,8 @@ trait BelongsToTenant
 
     public function associateWithTenant(Tenant $tenant): void
     {
+        logger("Associating model {$this->getTable()} {$this->id} with tenant {$tenant->id}");
+
         $tenantClass = app()->make(Tenant::class)::class;
 
         if (! $tenant instanceof $tenantClass) {
