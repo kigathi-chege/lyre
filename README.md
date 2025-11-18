@@ -194,6 +194,13 @@ Lyre provides the following query string filters to filter all your data the way
 - **search** - Search through all columns for a string match, e.g. `/subjects?search=physics`
 - **startswith** - Get all rows whose `NAME_COLUMN` startswith substring, e.g. `/subjects?startswith=b`
 - **withcount** - Get the count of a relationship, e.g. `/subjects?withcount=tasks` returns with a `tasks_count` field containing the number of tasks for each subject.
+- **wherenull** - Provide comma separated columns whose value should be `NULL`
+- **doesnthave** - Provide comma separated relations that must be empty
+- **limit / offset / random / first** - Fine tune record counts and ordering without writing SQL
+
+### Further Reading
+
+- [Architecture & Query Guide](docs/cursor/architecture-and-query-guide.md) — deep dive into `Model`, `Repository`, `Controller`, `Resource`, and facet query patterns.
 
 ## Known Issues
 
