@@ -88,48 +88,101 @@ Other notable behaviors:
 - `columnMeta()` lets you register transformers (e.g., convert enums to human-readable labels) per attribute.
 - `prepareCollection()` wraps paginated responses in `{ data, meta }` while leaving non-paginated responses as simple collections.
 
-## 5. Facet query patterns (Courses ➜ Subjects ➜ Topics)
+## 5. Hierarchical Facets and Query Patterns
 
-Because curriculum data is stored as facet values, you can traverse the hierarchy using plain facet endpoints. The seeder creates:
+Facets can now have parent-child relationships, enabling multi-tenant categorization structures. For example:
+- **Standard Curriculum**: Course (root) → Subject (parent: Course) → Topic (parent: Subject)
+- **Extended Curriculum**: Curriculum (root) → Learning Areas (parent: Curriculum) → Topics (parent: Learning Areas) → Subtopics (parent: Topics)
 
-- `Facet` named `Curriculum`.
-- Root `FacetValue`s (courses) with `parent_id = null`.
-- Child `FacetValue`s (subjects) whose parent is the course value.
-- Grandchildren (topics) whose parent is the subject value.
+### 5.1 Facet Hierarchy Structure
 
-### 5.1 Get all courses
+- **Facets** can have `parent_id` to create facet hierarchies (e.g., Course facet → Subject facet → Topic facet)
+- **FacetValues** belong to a specific facet and can have `parent_id` to create value hierarchies (e.g., "Mathematics" course → "Algebra" subject → "Linear Equations" topic)
+- This dual hierarchy allows tenants to define custom categorization structures
 
-```http
-GET /api/facetvalues?relation=facet.slug,curriculum&filter=parent_id,null&with=children
-```
-
-- `relation=facet.slug,curriculum` limits results to the `Curriculum` facet.
-- `filter=parent_id,null` ensures only top-level values (courses) are returned.
-- `with=children` eagerly loads subjects so you can inspect the next layer immediately.
-
-### 5.2 Get subjects for a course
+### 5.2 Get Facet Hierarchy
 
 ```http
-GET /api/facetvalues?relation=parent.slug,<course-slug>&with=children
+GET /api/facets/hierarchy
 ```
 
-OR
+Returns the complete facet hierarchy tree for the current tenant, including:
+- Facet names, slugs, and parent relationships
+- Depth levels for each facet
+- Nested children structure
+
+Example response:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Course",
+      "slug": "course",
+      "parent_id": null,
+      "depth": 0,
+      "children": [
+        {
+          "id": 2,
+          "name": "Subject",
+          "slug": "subject",
+          "parent_id": 1,
+          "depth": 1,
+          "children": [
+            {
+              "id": 3,
+              "name": "Topic",
+              "slug": "topic",
+              "parent_id": 2,
+              "depth": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 5.3 Query Facet Values by Hierarchical Facets
+
+#### Get root-level facet values (e.g., courses)
 
 ```http
-GET /api/facetvalues?filter=parent_id,<course-id>&with=children
+GET /api/facetvalues?relation=facet.slug,<root-facet-slug>&filter=parent_id,null&with=children
 ```
 
-Either query returns the child facet values (subjects) for the chosen course. Adding `with=children` brings back topics in the same payload.
+- `relation=facet.slug,<root-facet-slug>` limits results to the root facet (e.g., `course` or `curriculum`)
+- `filter=parent_id,null` ensures only top-level values are returned
+- `with=children` eagerly loads child values
 
-### 5.3 Get topics for a subject
+#### Get child facet values (e.g., subjects for a course)
 
 ```http
-GET /api/facetvalues?relation=parent.slug,<subject-slug>
+GET /api/facetvalues?relation=parent.slug,<parent-value-slug>&filter=facet.slug,<child-facet-slug>&with=children
 ```
 
-Because topics are simply children of subjects, you can repeat the same pattern as many levels deep as needed.
+- `relation=parent.slug,<parent-value-slug>` filters by parent facet value
+- `filter=facet.slug,<child-facet-slug>` ensures results belong to the correct child facet type
+- `with=children` eagerly loads grandchildren
 
-> **Tip:** Combine `with=children.children` when fetching courses to eagerly load subjects *and* topics in one call.
+#### Example: Get subjects for a course
+
+```http
+GET /api/facetvalues?relation=parent.slug,mathematics-101&filter=facet.slug,subject&with=children
+```
+
+This returns all subject facet values that are children of the "mathematics-101" course value.
+
+### 5.4 Multi-Tenant Categorization
+
+Each tenant can define their own facet hierarchy:
+- **Tenant A**: Course → Subject → Topic
+- **Tenant B**: Curriculum → Learning Areas → Topics → Subtopics
+
+The UI dynamically uses facet names from the hierarchy, so labels adapt automatically to each tenant's structure.
+
+> **Tip:** Use `GET /api/facets/hierarchy` to fetch the hierarchy once and cache it in your frontend. Then use the facet slugs dynamically in all queries.
 
 ## 6. Tips & Best Practices
 

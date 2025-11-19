@@ -58,6 +58,7 @@ return [
             'Lyre\Settings\Models',
             'Lyre\Guest\Models',
             'Lyre\Billing\Models',
+            'Lyre\School\Models',
         ],
 
         'repository' => [
@@ -69,6 +70,7 @@ return [
             'Lyre\Settings\Repositories',
             'Lyre\Guest\Repositories',
             'Lyre\Billing\Repositories',
+            'Lyre\School\Repositories',
         ],
 
         'contracts' => [
@@ -80,6 +82,7 @@ return [
             'Lyre\Settings\Contracts',
             'Lyre\Guest\Contracts',
             'Lyre\Billing\Contracts',
+            'Lyre\School\Contracts',
         ],
 
         'resource' => [
@@ -91,6 +94,7 @@ return [
             'Lyre\Settings\Http\Resources',
             'Lyre\Guest\Http\Resources',
             'Lyre\Billing\Http\Resources',
+            'Lyre\School\Http\Resources',
         ],
 
         'request' => [
@@ -102,6 +106,7 @@ return [
             'Lyre\Settings\Http\Requests',
             'Lyre\Guest\Http\Requests',
             'Lyre\Billing\Http\Requests',
+            'Lyre\School\Http\Requests',
         ],
     ],
 
