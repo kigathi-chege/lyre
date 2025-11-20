@@ -510,18 +510,50 @@ if (! function_exists("keyword_search")) {
     }
 }
 
+// if (! function_exists("filter_by_relationship")) {
+//     function filter_by_relationship($query, $relation, $column, $value)
+//     {
+//         return $query->whereHas($relation, function ($query) use ($column, $value) {
+//             $query->when(
+//                 is_array($value),
+//                 fn($q) => $q->whereIn($column, $value),
+//                 fn($q) => $q->where($column, $value)
+//             );
+//         });
+//     }
+// }
+
 if (! function_exists("filter_by_relationship")) {
     function filter_by_relationship($query, $relation, $column, $value)
     {
-        return $query->whereHas($relation, function ($query) use ($column, $value) {
-            $query->when(
+        return $query->whereHas($relation, function ($q) use ($column, $value) {
+            // Laravel automatically aliases the related table
+            $from = $q->getQuery()->from;
+
+            if (str_contains(strtolower($from), ' as ')) {
+                // Split on ' as ' (case-insensitive)
+                $parts = preg_split('/\s+as\s+/i', $from);
+                $alias = $parts[1]; // "laravel_reserved_0"
+            } else {
+                // No alias, just table name
+                $alias = $from; // "lyre_facet_values"
+            }
+
+            // If column has a dot (table.column), replace table with alias
+            if (str_contains($column, '.')) {
+                [$table, $col] = explode('.', $column, 2);
+                $column = "$alias.$col";
+            }
+
+            $q->when(
                 is_array($value),
-                fn($q) => $q->whereIn($column, $value),
-                fn($q) => $q->where($column, $value)
+                fn($q2) => $q2->whereIn($column, $value),
+                fn($q2) => $q2->where($column, $value)
             );
         });
     }
 }
+
 
 if (! function_exists("column_exists")) {
     function column_exists($table, $column)
