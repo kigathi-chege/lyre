@@ -555,6 +555,75 @@ if (! function_exists("filter_by_relationship")) {
 }
 
 
+if (! function_exists("filter_by_range")) {
+    /**
+     * Filter by range on related models, supporting nested relationships
+     * Handles BelongsTo, HasMany, and HasManyThrough relationships
+     * 
+     * Example: filter_by_range($query, 'variant.userProductVariants.prices', 'price', 100, 500)
+     * This will return products where ANY variant has ANY userProductVariant with ANY price in the range [100, 500]
+     */
+    function filter_by_range($query, $relationPath, $column, $value1, $value2)
+    {
+        $relations = explode('.', $relationPath);
+        $finalColumn = null;
+
+        // If column has a table prefix, extract it
+        if (strpos($column, '.') !== false) {
+            [$table, $finalColumn] = explode('.', $column, 2);
+        } else {
+            $finalColumn = $column;
+        }
+
+        // Build nested whereHas for each relationship level
+        return build_nested_range_filter($query, $relations, $finalColumn, $value1, $value2);
+    }
+}
+
+
+if (! function_exists("build_nested_range_filter")) {
+    /**
+     * Recursively build nested whereHas queries for relationship chains
+     */
+    function build_nested_range_filter($query, $relations, $column, $value1, $value2, $depth = 0)
+    {
+        if (empty($relations)) {
+            return $query;
+        }
+
+        $relation = array_shift($relations);
+
+        if (empty($relations)) {
+            // This is the final relationship level - apply the range filter here
+            return $query->whereHas($relation, function ($q) use ($column, $value1, $value2) {
+                // Get the actual table name/alias from the query
+                $from = $q->getQuery()->from;
+
+                if (str_contains(strtolower($from), ' as ')) {
+                    $parts = preg_split('/\s+as\s+/i', $from);
+                    $alias = $parts[1];
+                } else {
+                    $alias = $from;
+                }
+
+                // If column has a dot (table.column), replace table with alias
+                if (str_contains($column, '.')) {
+                    [$table, $col] = explode('.', $column, 2);
+                    $column = "$alias.$col";
+                }
+
+                $q->whereBetween($column, [$value1, $value2]);
+            });
+        } else {
+            // Intermediate relationship level - build nested whereHas
+            return $query->whereHas($relation, function ($q) use ($relations, $column, $value1, $value2) {
+                build_nested_range_filter($q, $relations, $column, $value1, $value2);
+            });
+        }
+    }
+}
+
+
 if (! function_exists("column_exists")) {
     function column_exists($table, $column)
     {

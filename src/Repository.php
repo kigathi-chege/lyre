@@ -520,7 +520,14 @@ class Repository implements RepositoryInterface
         if (!empty($this->rangeFilters)) {
             if (is_array($this->rangeFilters)) {
                 foreach ($this->rangeFilters as $key => $value) {
-                    $query = $query->whereBetween($key, $value);
+                    // Check if this is a relationship-based range filter
+                    if (is_array($value) && isset($value['relation'])) {
+                        // This is a relationship range filter - use the new nested helper
+                        $query = filter_by_range($query, $value['relation'], $value['column'], $value['value1'], $value['value2']);
+                    } else {
+                        // This is a direct column range filter
+                        $query = $query->whereBetween($key, $value);
+                    }
                 }
             }
         }
@@ -612,6 +619,33 @@ class Repository implements RepositoryInterface
         }
 
         return $result;
+    }
+
+    public function castRangeValues($columnType, $value1, $value2)
+    {
+        switch ($columnType) {
+            case 'integer':
+            case 'bigint':
+            case 'smallint':
+                $value1 = (int) $value1;
+                $value2 = (int) $value2;
+                break;
+            case 'float':
+            case 'double':
+            case 'decimal':
+                $value1 = (float) $value1;
+                $value2 = (float) $value2;
+                break;
+            case 'date':
+            case 'datetime':
+            case 'timestamp':
+                $value1 = \Carbon\Carbon::parse($value1)->startOfDay();
+                $value2 = \Carbon\Carbon::parse($value2)->endOfDay();
+                break;
+            default:
+                break;
+        }
+        return [$value1, $value2];
     }
 
     public function prepareQuery($query)
@@ -753,41 +787,64 @@ class Repository implements RepositoryInterface
             $this->relationFilters += [$relation => $filter];
         }
 
-        // TODO: Kigathi - July 6 2024 - Confirm that this code yields the expected results.
         /**
          * Expected query string format for range:
          * range=column1,value1,value2,column2,value3,value4,column3,value5,value6...
+         * Also supports relationships: range=relation.column,value1,value2,relation1.relation2.column1,value3,value4
+         * 
+         * Examples:
+         * range=price,100,500 (direct column)
+         * range=userProductVariants.prices.price,100,500 (nested relationships)
+         * range=variant.userProductVariants.prices.price,100,500 (product variant with prices)
          */
         if (array_key_exists('range', $requestQueries) && $requestQueries['range']) {
             $parts = explode(",", $requestQueries['range']);
             $result = [];
             for ($i = 0; $i < count($parts); $i += 3) {
-                $columnType = Schema::getColumnType($this->model->getTable(), $parts[$i]);
-
+                $columnPath = $parts[$i];
                 $value1 = $parts[$i + 1];
                 $value2 = $parts[$i + 2];
 
-                switch ($columnType) {
-                    case 'integer':
-                        $value1 = (int) $value1;
-                        $value2 = (int) $value2;
-                        break;
-                    case 'float':
-                    case 'double':
-                    case 'decimal':
-                        $value1 = (float) $value1;
-                        $value2 = (float) $value2;
-                        break;
-                    case 'date':
-                    case 'datetime':
-                    case 'timestamp':
-                        $value1 = \Carbon\Carbon::parse($value1)->startOfDay();
-                        $value2 = \Carbon\Carbon::parse($value2)->endOfDay();
-                        break;
-                    default:
-                        break;
+                // Check if this is a relationship path (contains a dot)
+                if (strpos($columnPath, '.') !== false) {
+                    $segments = explode('.', $columnPath);
+                    $finalColumn = array_pop($segments);
+                    $relationPath = implode('.', $segments);
+
+                    // Navigate through relationships to find the final column type
+                    $relatedModel = $this->model;
+                    // $relatedModelClass = get_class($this->model);
+
+                    foreach ($segments as $segment) {
+                        // $relatedModel = $relatedModel->{$segment}();
+                        // $relatedModelClass = get_class($relatedModel->getRelated());
+                        if (!method_exists($relatedModel, $segment)) {
+                            throw new \Exception("Relationship '{$segment}' does not exist on " . get_class($relatedModel));
+                        }
+
+                        $relation = $relatedModel->{$segment}();          // Relation object
+                        $relatedModel = $relation->getRelated();
+                    }
+
+                    // $table = (new $relatedModelClass)->getTable();
+                    $table = $relatedModel->getTable();
+                    $columnType = Schema::getColumnType($table, $finalColumn);
+
+                    // Cast values based on column type
+                    [$value1, $value2] = $this->castRangeValues($columnType, $value1, $value2);
+
+                    $result[$columnPath] = [
+                        'column' => "$table.$finalColumn",
+                        'value1' => $value1,
+                        'value2' => $value2,
+                        'relation' => $relationPath
+                    ];
+                } else {
+                    // Direct column on the model
+                    $columnType = Schema::getColumnType($this->model->getTable(), $columnPath);
+                    [$value1, $value2] = $this->castRangeValues($columnType, $value1, $value2);
+                    $result[$columnPath] = [$value1, $value2];
                 }
-                $result[$parts[$i]] = [$value1, $value2];
             }
             $this->rangeFilters = $result;
         }
@@ -851,6 +908,7 @@ class Repository implements RepositoryInterface
         }
 
         if (count($requestQueries) > 0) {
+            $result = [];
             foreach ($requestQueries as $key => $value) {
                 $modelRelationships = $this->model->getModelRelationships();
                 if (!empty($modelRelationships[$key]) && array_key_exists($key, $modelRelationships)) {

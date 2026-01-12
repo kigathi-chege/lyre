@@ -36,15 +36,16 @@ class Observer
     public function created($model): void
     {
         // Associate with tenant asynchronously to avoid blocking
-        if (tenant() && !($model instanceof \Lyre\Models\TenantAssociation || $model instanceof \Lyre\Models\Tenant)) {
+        $tenant = tenant();
+        if ($tenant && !($model instanceof \Lyre\Models\TenantAssociation || $model instanceof \Lyre\Models\Tenant)) {
             try {
-                $model->associateWithTenant(tenant());
+                $model->associateWithTenant($tenant);
             } catch (\Throwable $e) {
                 // Log but don't fail the request if tenant association fails
                 logger()->warning('Failed to associate model with tenant', [
                     'model' => get_class($model),
                     'model_id' => $model->id,
-                    'tenant_id' => tenant()->id,
+                    'tenant_id' => $tenant?->id,
                     'error' => $e->getMessage(),
                 ]);
             }
