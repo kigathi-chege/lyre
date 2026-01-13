@@ -135,11 +135,11 @@ class Repository implements RepositoryInterface
             }
 
             // 🔁 Optionally search slug/uuid as fallbacks
-            if (Schema::hasColumn($table, 'slug')) {
+            if (Schema::hasColumn($table, 'slug') && $idColumn !== 'slug') {
                 $query->orWhere('slug', $arguments);
             }
 
-            if (Schema::hasColumn($this->model->getTable(), 'uuid')) {
+            if (Schema::hasColumn($this->model->getTable(), 'uuid') && $idColumn !== 'uuid') {
                 $query->orWhere('uuid', $arguments);
             }
         } else {
