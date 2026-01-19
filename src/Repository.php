@@ -8,12 +8,16 @@ use Lyre\Exceptions\CommonException;
 use Lyre\Facades\Lyre;
 use Lyre\Interface\RepositoryInterface;
 use Illuminate\Support\Facades\Config;
+use Lyre\Traits\HasModelRelationships;
 
 class Repository implements RepositoryInterface
 {
+    use HasModelRelationships;
+
     // TODO: Kigathi - September 5 2035 - Should implement concerns strategy to prevent bloating this file
 
     protected $model;
+    protected $resource;
     protected $relations = [];
     protected $columnFilters = [];
     protected $rangeFilters = [];
@@ -25,7 +29,6 @@ class Repository implements RepositoryInterface
     protected $page = 1;
     protected $methods;
     protected $arguments;
-    protected $resource;
     protected $silent = false;
     protected $withInactive = false;
     protected $limit = false;
@@ -907,26 +910,7 @@ class Repository implements RepositoryInterface
             $this->first();
         }
 
-        if (count($requestQueries) > 0) {
-            $result = [];
-            foreach ($requestQueries as $key => $value) {
-                $modelRelationships = $this->model->getModelRelationships();
-                if (!empty($modelRelationships[$key]) && array_key_exists($key, $modelRelationships)) {
-                    if (!$this->model->relationLoaded($key)) {
-                        $this->model->load($key);
-                    }
-                    $relatedModel = $this->model->{$key}();
-                    $relatedModelClass = get_class($relatedModel->getRelated());
-                    $relatedModelIDColumn = $relatedModelClass::ID_COLUMN;
-                    $relatedModelTable = (new $relatedModelClass)->getTable();
-                    $result[$key] = [
-                        'column' => "$relatedModelTable.$relatedModelIDColumn",
-                        'value' => $value,
-                    ];
-                    $this->relationFilters += $result;
-                }
-            }
-        }
+        $this->relationFilters = $this->buildRelationFilters($requestQueries, $this->model);
 
         return $query;
     }
