@@ -35,13 +35,15 @@ trait BelongsToTenant
 
     public function scopeForTenant($query, Tenant $tenant)
     {
+        $prefix = config('lyre.table_prefix');
+
         // TODO: Kigathi - August 14 2025 - Should only check role if user model implements `hasRole` method
         if (auth()->check() && auth()->user()->hasRole(config('lyre.super-admin'))) {
             return $query; // no restriction
         }
 
-        return $query->whereHas('associatedTenants', function ($q) use ($tenant) {
-            $q->where('tenants.id', $tenant->id);
+        return $query->whereHas('associatedTenants', function ($q) use ($prefix, $tenant) {
+            $q->where("{$prefix}tenants.id", $tenant->id);
         });
     }
 
