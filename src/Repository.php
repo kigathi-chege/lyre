@@ -128,6 +128,8 @@ class Repository implements RepositoryInterface
             // 🧠 Determine the column type from the database schema
             $columnType = Schema::getColumnType($table, $idColumn);
 
+            // TODO: Kigathi - January 23 2026 - This effectively does the same thing
+
             // If it's an integer/bigint column and $arguments is numeric
             if (in_array($columnType, ['integer', 'bigint', 'smallint']) && is_numeric($arguments)) {
                 $query->where($idColumn, $arguments);

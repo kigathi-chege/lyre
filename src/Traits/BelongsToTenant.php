@@ -33,13 +33,8 @@ trait BelongsToTenant
     //     });
     // }
 
-    public function scopeForCurrentTenant($query)
+    public function scopeForTenant($query, Tenant $tenant)
     {
-        $tenant = tenant();
-        if (!$tenant) {
-            return $query; // no tenant, no restriction
-        }
-
         // TODO: Kigathi - August 14 2025 - Should only check role if user model implements `hasRole` method
         if (auth()->check() && auth()->user()->hasRole(config('lyre.super-admin'))) {
             return $query; // no restriction
@@ -48,6 +43,16 @@ trait BelongsToTenant
         return $query->whereHas('associatedTenants', function ($q) use ($tenant) {
             $q->where('tenants.id', $tenant->id);
         });
+    }
+
+    public function scopeForCurrentTenant($query)
+    {
+        $tenant = tenant();
+        if (!$tenant) {
+            return $query; // no tenant, no restriction
+        }
+
+        return $query->forTenant($tenant);
     }
 
     public function associateWithTenant(Tenant $tenant): void
