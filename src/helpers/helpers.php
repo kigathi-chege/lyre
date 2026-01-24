@@ -1134,3 +1134,30 @@ if (! function_exists('is_json')) {
         return json_last_error() === JSON_ERROR_NONE;
     }
 }
+
+if (!function_exists('fill_template')) {
+    function fill_template(string $template, $model): string
+    {
+        return preg_replace_callback('/{{\s*([\w\.]+)\s*}}/', function ($matches) use ($model) {
+            $path = $matches[1];
+
+            // Handle nested paths like user.name
+            $keys = explode('.', $path);
+
+            $value = $model;
+
+            foreach ($keys as $key) {
+                if (is_array($value) && array_key_exists($key, $value)) {
+                    $value = $value[$key];
+                } elseif (is_object($value) && isset($value->{$key})) {
+                    $value = $value->{$key};
+                } else {
+                    // return original placeholder if not found
+                    return $matches[0];
+                }
+            }
+
+            return (string) $value;
+        }, $template);
+    }
+}
