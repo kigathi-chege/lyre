@@ -8,30 +8,56 @@ use Lyre\Models\TenantAssociation;
 
 trait BelongsToTenant
 {
-    // public static function bootBelongsToTenant()
-    // {
-    //     static::addGlobalScope('tenant', function (Builder $query) {
-    //         $tenantModel = tenant();
+    /**
+     * Boot the BelongsToTenant trait for a model.
+     *
+     * Automatically scopes all queries to the current tenant for non-super-admin users.
+     * Super-admins can see data across all tenants.
+     *
+     * To bypass this scope in specific queries, use:
+     * Model::withoutGlobalScope('tenant')->get();
+     */
+    public static function bootBelongsToTenant()
+    {
+        static::addGlobalScope('tenant', function ($query) {
+            // List of models that should NOT be tenant-scoped
+            $excludedModels = [
+                // 'App\Models\User',
+                // 'App\Models\Tenant',
+                // 'Lyre\Models\Tenant',
+                // 'App\Models\Role',
+                // 'App\Models\Permission',
+            ];
 
-    //         if (! $tenantModel) {
-    //             logger("No tenant found, skipping tenant scope for model " . static::class);
-    //             return;
-    //         }
+            // Skip if this model should not be scoped
+            if (in_array(static::class, $excludedModels)) {
+                return;
+            }
 
-    //         $tenantId = $tenantModel?->id;
+            // Only apply if user is authenticated
+            if (!auth()->check()) {
+                return;
+            }
 
-    //         logger("Applying tenant scope with ID: {$tenantId} for model " . static::class);
+            // Skip if user is super-admin
+            $user = auth()->user();
+            if (method_exists($user, 'hasRole') && call_user_func([$user, 'hasRole'], config('lyre.super-admin'))) {
+                return;
+            }
 
-    //         if ($tenantId) {
-    //             logger("Tenant ID found: {$tenantId}, applying scope...");
-    //             $query->whereHas('tenants', function ($q) use ($tenantId) {
-    //                 $q->where('tenants.id', $tenantId);
-    //             });
-    //         }
+            // Get current tenant
+            $tenant = tenant();
+            if (!$tenant) {
+                return;
+            }
 
-    //         logger("Tenant scope applied to query: " . $query->toSql());
-    //     });
-    // }
+            // Apply tenant scope using the associatedTenants relationship
+            $prefix = config('lyre.table_prefix', '');
+            $query->whereHas('associatedTenants', function ($q) use ($prefix, $tenant) {
+                $q->where("{$prefix}tenants.id", $tenant->id);
+            });
+        });
+    }
 
     public function scopeForTenant($query, Tenant $tenant)
     {

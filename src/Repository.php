@@ -668,6 +668,21 @@ class Repository implements RepositoryInterface
         if (!(Config::get('request-model') && Config::get('request-model')->getClassName() == $this->model->getClassName()) || Config::get('skip-prepare')) {
             return $query;
         }
+
+        /**
+         * Explicit tenant scoping for repository queries.
+         * This provides additional layer of security on top of the global scope.
+         * Only applies to authenticated non-super-admin users with an active tenant.
+         */
+        if (auth()->check() && tenant() && method_exists($this->model, 'scopeForCurrentTenant')) {
+            $user = auth()->user();
+            $isSuperAdmin = method_exists($user, 'hasRole') && call_user_func([$user, 'hasRole'], config('lyre.super-admin'));
+
+            if (!$isSuperAdmin) {
+                $query = $query->forCurrentTenant();
+            }
+        }
+
         $originQuery = clone $query;
         if (!$this->withInactive) {
             $query = $this->filterActive($query);
