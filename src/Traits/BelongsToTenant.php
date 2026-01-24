@@ -57,8 +57,12 @@ trait BelongsToTenant
         return $query->forTenant($tenant);
     }
 
-    public function associateWithTenant(Tenant $tenant): void
+    public function associateWithTenant(Tenant | int $tenant): void
     {
+        if (is_int($tenant)) {
+            $tenant = Tenant::find($tenant);
+        }
+
         logger("Associating model {$this->getTable()} {$this->id} with tenant {$tenant->id}");
 
         $tenantClass = app()->make(Tenant::class)::class;
