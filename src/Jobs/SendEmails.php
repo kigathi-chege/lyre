@@ -30,6 +30,6 @@ class SendEmails implements ShouldQueue
     public function handle(): void
     {
         // TODO: Kigathi - July 2 2025 - Should monitor the status of Mail (Whether successfully dispatched or not)
-        Mail::to($this->email)->send(new \App\Mail\CommonMail($this->data, $this->subject, $this->view));
+        Mail::to($this->email)->send(new \Lyre\Mail\CommonMail($this->data, $this->subject, $this->view));
     }
 }
