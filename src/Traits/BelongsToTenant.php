@@ -5,6 +5,7 @@ namespace Lyre\Traits;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Lyre\Models\Tenant;
 use Lyre\Models\TenantAssociation;
+use Filament\Facades\Filament;
 
 trait BelongsToTenant
 {
@@ -20,13 +21,32 @@ trait BelongsToTenant
     public static function bootBelongsToTenant()
     {
         static::addGlobalScope('tenant', function ($query) {
-            // List of models that should NOT be tenant-scoped
+            /*
+             |--------------------------------------------------------------------------
+             | Bypass tenant scoping for Filament
+             |--------------------------------------------------------------------------
+             |
+             | Filament is an administrative context and should not be tenant-restricted
+             | unless explicitly desired. This avoids polluting every Filament query
+             | with `withoutGlobalScope('tenant')`.
+             |
+             */
+            if (app()->runningInConsole() === false && Filament::isServing()) {
+                return;
+            }
+
+            // Skip tenant infrastructure models to prevent infinite recursion
+            if (is_a(static::class, Tenant::class, true) || is_a(static::class, TenantAssociation::class, true)) {
+                return;
+            }
+
+            logger()->info("MODEL", [static::class]);
+
+            // List of additional models that should NOT be tenant-scoped
             $excludedModels = [
-                // 'App\Models\User',
-                // 'App\Models\Tenant',
-                // 'Lyre\Models\Tenant',
-                // 'App\Models\Role',
-                // 'App\Models\Permission',
+                'App\Models\User',
+                'App\Models\Role',
+                'App\Models\Permission',
             ];
 
             // Skip if this model should not be scoped
@@ -62,9 +82,10 @@ trait BelongsToTenant
     public function scopeForTenant($query, Tenant $tenant)
     {
         $prefix = config('lyre.table_prefix');
+        $userModel = config('lyre.user_model');
+        $user = auth()->user();
 
-        // TODO: Kigathi - August 14 2025 - Should only check role if user model implements `hasRole` method
-        if (auth()->check() && auth()->user()->hasRole(config('lyre.super-admin'))) {
+        if (auth()->check() && $user instanceof $userModel && method_exists($user, 'hasRole') && $user->hasRole(config('lyre.super-admin'))) {
             return $query; // no restriction
         }
 
