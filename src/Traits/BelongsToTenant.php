@@ -1,11 +1,10 @@
 <?php
-
 namespace Lyre\Traits;
 
+use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Lyre\Models\Tenant;
 use Lyre\Models\TenantAssociation;
-use Filament\Facades\Filament;
 
 trait BelongsToTenant
 {
@@ -40,13 +39,12 @@ trait BelongsToTenant
                 return;
             }
 
-            logger()->info("MODEL", [static::class]);
-
             // List of additional models that should NOT be tenant-scoped
             $excludedModels = [
                 'App\Models\User',
                 'App\Models\Role',
                 'App\Models\Permission',
+                'Lyre\Content\Models\InteractionType',
             ];
 
             // Skip if this model should not be scoped
@@ -54,20 +52,17 @@ trait BelongsToTenant
                 return;
             }
 
-            // Only apply if user is authenticated
-            if (!auth()->check()) {
-                return;
-            }
-
             // Skip if user is super-admin
-            $user = auth()->user();
-            if (method_exists($user, 'hasRole') && call_user_func([$user, 'hasRole'], config('lyre.super-admin'))) {
-                return;
+            if (auth()->check()) {
+                $user = auth()->user();
+                if (method_exists($user, 'hasRole') && call_user_func([$user, 'hasRole'], config('lyre.super-admin'))) {
+                    return;
+                }
             }
 
             // Get current tenant
             $tenant = tenant();
-            if (!$tenant) {
+            if (! $tenant) {
                 return;
             }
 
@@ -81,9 +76,9 @@ trait BelongsToTenant
 
     public function scopeForTenant($query, Tenant $tenant)
     {
-        $prefix = config('lyre.table_prefix');
+        $prefix    = config('lyre.table_prefix');
         $userModel = config('lyre.user_model');
-        $user = auth()->user();
+        $user      = auth()->user();
 
         if (auth()->check() && $user instanceof $userModel && method_exists($user, 'hasRole') && $user->hasRole(config('lyre.super-admin'))) {
             return $query; // no restriction
@@ -97,7 +92,7 @@ trait BelongsToTenant
     public function scopeForCurrentTenant($query)
     {
         $tenant = tenant();
-        if (!$tenant) {
+        if (! $tenant) {
             return $query; // no tenant, no restriction
         }
 
@@ -136,10 +131,10 @@ trait BelongsToTenant
 
         return $this->morphToMany(
             $tenantClass,
-            'tenantable',              // morph name (based on tenantable_id / tenantable_type in TenantAssociation)
-            $prefix . 'tenant_associations',     // pivot table
-            'tenantable_id',           // FK to your model
-            'tenant_id'                 // FK to Tenant
+            'tenantable',                    // morph name (based on tenantable_id / tenantable_type in TenantAssociation)
+            $prefix . 'tenant_associations', // pivot table
+            'tenantable_id',                 // FK to your model
+            'tenant_id'                      // FK to Tenant
         )
             ->using(TenantAssociation::class)
             ->withTimestamps();

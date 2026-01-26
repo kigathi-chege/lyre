@@ -1,6 +1,6 @@
 <?php
 
-namespace Lyre;
+namespace Lyre\Repositories;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
