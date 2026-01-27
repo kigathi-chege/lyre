@@ -1,4 +1,5 @@
 <?php
+
 namespace Lyre\Traits;
 
 use Filament\Facades\Filament;
@@ -104,8 +105,6 @@ trait BelongsToTenant
         if (is_int($tenant)) {
             $tenant = Tenant::find($tenant);
         }
-
-        logger("Associating model {$this->getTable()} {$this->id} with tenant {$tenant->id}");
 
         $tenantClass = app()->make(Tenant::class)::class;
 
