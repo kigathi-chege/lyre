@@ -4,11 +4,12 @@ namespace Lyre\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
+use Lyre\File\Concerns\HasFile;
 use Lyre\Model;
 
 class Tenant extends Model
 {
-    use HasFactory;
+    use HasFactory, HasFile;
 
     /**
      * Get the table associated with the model.
