@@ -88,6 +88,8 @@ if (! function_exists("__response")) {
                     ? Response::HTTP_INTERNAL_SERVER_ERROR
                     : Response::HTTP_EXPECTATION_FAILED));
 
+        dd($responseData, $httpCode, $headers);
+
         $jsonResponse = response()->json($responseData, $httpCode, $headers);
 
         if ($forgetGuestUuid) {
