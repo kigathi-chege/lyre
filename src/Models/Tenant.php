@@ -27,6 +27,10 @@ class Tenant extends Model
         return $this->belongsTo(get_user_model());
     }
 
+    /**
+     * Get the route key for the model.
+     * @return string
+     */
     public function getRouteKeyName(): string
     {
         return $this::ID_COLUMN;
