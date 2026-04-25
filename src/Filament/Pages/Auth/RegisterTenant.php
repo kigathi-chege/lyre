@@ -5,7 +5,7 @@ namespace Lyre\Filament\Pages\Auth;
 use Lyre\Models\Tenant;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
 use Lyre\Billing\Models\Subscription;
 use Lyre\Billing\Models\SubscriptionPlan;
@@ -19,7 +19,7 @@ class RegisterTenant extends \Filament\Pages\Tenancy\RegisterTenant
         return 'Create Organization';
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $form): Schema
     {
         $host = app_url_host();
 

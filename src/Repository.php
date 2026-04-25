@@ -285,7 +285,7 @@ class Repository implements RepositoryInterface
         $query = $this->getQuery();
 
         if (!is_array($slug)) {
-            $slug = [$slug];
+            $slug = array_map('trim', explode(',', $slug));
         }
 
         $idColumn = get_model_id_column($this->model);
@@ -927,7 +927,7 @@ class Repository implements RepositoryInterface
             $this->first();
         }
 
-        $this->relationFilters = $this->buildRelationFilters($requestQueries, $this->model);
+        $this->relationFilters = array_merge($this->relationFilters, $this->buildRelationFilters($requestQueries, $this->model));
 
         return $query;
     }

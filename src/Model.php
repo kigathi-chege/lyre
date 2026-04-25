@@ -20,6 +20,10 @@ class Model extends BaseModel
      */
     public function getTable()
     {
+        if (! empty($this->table)) {
+            return $this->table;
+        }
+
         $tableName = Str::snake(Str::pluralStudly(class_basename($this)));
         $isLyreModel = Str::startsWith(static::class, 'Lyre\\');
         if ($isLyreModel) {

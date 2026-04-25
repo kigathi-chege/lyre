@@ -26,7 +26,7 @@ Lyre is accessible, powerful, and it is your next favorite tool.
 composer require lyre/lyre
 ```
 
-- Add `LyreServiceProvider` to your providers array under `bootstrap` > `providers.php`
+- Package discovery should register `LyreServiceProvider` automatically. If discovery is disabled, add `LyreServiceProvider` in `bootstrap/providers.php`.
 - Add `use BaseModelTrait` to your existing models.
 - Run `php artisan vendor:publish --provider="Lyre\Providers\LyreServiceProvider"` to publish Lyre configuration.
 - Clear configuration cache
@@ -55,7 +55,7 @@ Route::apiResource('posts', PostController::class);
 
 ## Dependencies
 
-- **[PHP 8.2](https://www.php.net/releases/8.2/en.php)**
+- **[PHP 8.3](https://www.php.net/releases/8.3/en.php)**
 - **[Spatie Activity Log](https://spatie.be/docs/laravel-activitylog/v4/introduction)**
 - **[Spatie Laravel Permission](https://spatie.be/docs/laravel-permission/v6/introduction)**
 

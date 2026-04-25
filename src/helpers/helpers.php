@@ -8,7 +8,14 @@ use Lyre\Exceptions\CommonException;
 use Lyre\Resource;
 use Symfony\Component\HttpFoundation\Response;
 
-if (!function_exists('basic_fields')) {
+if (! function_exists('app_url_host')) {
+    function app_url_host(): string
+    {
+        return parse_url(config('app.url'), PHP_URL_HOST) ?? 'app.local';
+    }
+}
+
+if (! function_exists("basic_fields")) {
     function basic_fields(Illuminate\Database\Schema\Blueprint $table, $tableName)
     {
         if (!\Illuminate\Support\Facades\Schema::hasColumn($tableName, 'id')) {
@@ -291,12 +298,27 @@ if (! function_exists('get_model_permission_by_prefix')) {
 if (! function_exists('get_model_classes')) {
     function get_model_classes($baseNamespace = null)
     {
+        $resolver = function ($namespaces) {
+            if (!app()->bound('cache')) {
+                return scan_for_models($namespaces);
+            }
+
+            try {
+                return cache()->rememberForever(
+                    is_array($namespaces) ? 'app_model_classes' : "app_model_classes:{$namespaces}",
+                    fn() => scan_for_models($namespaces)
+                );
+            } catch (\Throwable $e) {
+                return scan_for_models($namespaces);
+            }
+        };
+
         if ($baseNamespace !== null) {
-            return cache()->rememberForever("app_model_classes:{$baseNamespace}", fn() => scan_for_models($baseNamespace));
+            return $resolver($baseNamespace);
         }
 
         $defaultNamespaces = config('lyre.path.model', ['App\\Models']);
-        return cache()->rememberForever('app_model_classes', fn() => scan_for_models($defaultNamespaces));
+        return $resolver($defaultNamespaces);
     }
 }
 
@@ -705,7 +727,10 @@ if (! function_exists("generate_basic_model_response_codes")) {
         $modelClasses  = get_model_classes();
         foreach ($modelClasses as $modelClass) {
             if (method_exists($modelClass, 'generateConfig')) {
-                $config     = $modelClass::generateConfig();
+                $reflection = new ReflectionMethod($modelClass, 'generateConfig');
+                $config = $reflection->isStatic()
+                    ? $modelClass::generateConfig()
+                    : (new $modelClass)->generateConfig();
                 $pluralName = $config['table'];
                 $name       = Pluralizer::singular($pluralName);
                 $responseCodes += [
