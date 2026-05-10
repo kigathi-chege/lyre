@@ -13,6 +13,7 @@ use FilamentTiptapEditor\TiptapEditor;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use ValentinMorice\FilamentJsonColumn\JsonColumn;
+use UnitEnum;
 
 class TenantResource extends Resource
 {
@@ -20,11 +21,10 @@ class TenantResource extends Resource
 
     protected static \BackedEnum|string|null $navigationIcon = 'ri-user-4-line';
 
-    public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): string | UnitEnum | null
     {
         return 'Accounts';
     }
-
 
     protected static ?int $navigationSort = 56;
 
