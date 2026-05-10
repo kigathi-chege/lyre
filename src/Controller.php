@@ -215,4 +215,72 @@ class Controller extends BaseController
         $scopeId = $scopedResource->resource->id;
         return fn($query) => $query->where("{$scopeName}_id", $scopeId);
     }
+
+    public function getRelation(Request $request, $id, $relation)
+    {
+        $model = $this->modelRepository->find(['id' => $id]);
+        
+        if (!$model || !method_exists($model->resource, $relation)) {
+            return __response(false, 'Relation not found', null, 404);
+        }
+
+        $related = $model->resource->$relation()->get();
+        
+        return __response(true, "Get {$relation}", $related);
+    }
+
+    public function attachRelation(Request $request, $id, $relation)
+    {
+        $model = $this->modelRepository->find(['id' => $id]);
+        
+        if (!$model || !method_exists($model->resource, $relation)) {
+            return __response(false, 'Relation not found', null, 404);
+        }
+
+        $relatedIds = $request->input('ids', []);
+        $pivotData = $request->input('pivot', []);
+        
+        if (!empty($pivotData)) {
+            $syncData = [];
+            foreach ($relatedIds as $relatedId) {
+                $syncData[$relatedId] = $pivotData;
+            }
+            $model->resource->$relation()->syncWithoutDetaching($syncData);
+        } else {
+            $model->resource->$relation()->syncWithoutDetaching($relatedIds);
+        }
+        
+        return __response(true, "Attached {$relation}", null);
+    }
+
+    public function detachRelation(Request $request, $id, $relation)
+    {
+        $model = $this->modelRepository->find(['id' => $id]);
+        
+        if (!$model || !method_exists($model->resource, $relation)) {
+            return __response(false, 'Relation not found', null, 404);
+        }
+
+        $relatedIds = $request->input('ids', []);
+        $model->resource->$relation()->detach($relatedIds);
+        
+        return __response(true, "Detached {$relation}", null);
+    }
+
+    public function updateRelationOrder(Request $request, $id, $relation)
+    {
+        $model = $this->modelRepository->find(['id' => $id]);
+        
+        if (!$model || !method_exists($model->resource, $relation)) {
+            return __response(false, 'Relation not found', null, 404);
+        }
+
+        $order = $request->input('order', []);
+        
+        foreach ($order as $index => $relatedId) {
+            $model->resource->$relation()->updateExistingPivot($relatedId, ['order' => $index]);
+        }
+        
+        return __response(true, "Updated {$relation} order", null);
+    }
 }
