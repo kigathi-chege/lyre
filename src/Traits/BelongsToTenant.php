@@ -23,6 +23,26 @@ trait BelongsToTenant
         static::addGlobalScope('tenant', function ($query) {
             /*
              |--------------------------------------------------------------------------
+             | Re-entry guard
+             |--------------------------------------------------------------------------
+             |
+             | When the auth user is being resolved (e.g. during SessionGuard::user(),
+             | inside auth()->check()) and the User model eager-loads a relation to a
+             | Lyre model (e.g. via `$with = ['files']`), Eloquent builds the related
+             | query and applies this scope. Without this guard, our call to
+             | `auth()->check()` below re-enters SessionGuard::user(), which restarts
+             | the entire User-fetch + eager-load + scope chain — infinite recursion.
+             |
+             | We use a static flag instead of a thread-local because PHP-FPM serves
+             | one request per worker; the flag is reset on every scope evaluation.
+             */
+            static $resolving = false;
+            if ($resolving) {
+                return;
+            }
+
+            /*
+             |--------------------------------------------------------------------------
              | Bypass tenant scoping for Filament
              |--------------------------------------------------------------------------
              |
@@ -53,33 +73,38 @@ trait BelongsToTenant
                 return;
             }
 
-            // Skip if user is super-admin
-            if (auth()->check()) {
-                $user = auth()->user();
-                if (method_exists($user, 'hasRole') && call_user_func([$user, 'hasRole'], config('lyre.super-admin'))) {
+            $resolving = true;
+            try {
+                // Skip if user is super-admin
+                if (auth()->check()) {
+                    $user = auth()->user();
+                    if (method_exists($user, 'hasRole') && call_user_func([$user, 'hasRole'], config('lyre.super-admin'))) {
+                        return;
+                    }
+                }
+
+                // Get current tenant
+                $tenant = tenant();
+                if (! $tenant) {
                     return;
                 }
-            }
 
-            // Get current tenant
-            $tenant = tenant();
-            if (! $tenant) {
-                return;
+                // Apply tenant scope using the associatedTenants relationship
+                $prefix = config('lyre.table_prefix', '');
+                $query->whereHas('associatedTenants', function ($q) use ($prefix, $tenant) {
+                    $q->where("{$prefix}tenants.id", $tenant->id);
+                });
+            } finally {
+                $resolving = false;
             }
-
-            // Apply tenant scope using the associatedTenants relationship
-            $prefix = config('lyre.table_prefix', '');
-            $query->whereHas('associatedTenants', function ($q) use ($prefix, $tenant) {
-                $q->where("{$prefix}tenants.id", $tenant->id);
-            });
         });
     }
 
     public function scopeForTenant($query, Tenant $tenant)
     {
-        $prefix    = config('lyre.table_prefix');
+        $prefix = config('lyre.table_prefix');
         $userModel = config('lyre.user_model');
-        $user      = auth()->user();
+        $user = auth()->user();
 
         if (auth()->check() && $user instanceof $userModel && method_exists($user, 'hasRole') && $user->hasRole(config('lyre.super-admin'))) {
             return $query; // no restriction
@@ -100,7 +125,7 @@ trait BelongsToTenant
         return $query->forTenant($tenant);
     }
 
-    public function associateWithTenant(Tenant | int $tenant): void
+    public function associateWithTenant(Tenant|int $tenant): void
     {
         if (is_int($tenant)) {
             $tenant = Tenant::find($tenant);
@@ -131,7 +156,7 @@ trait BelongsToTenant
         return $this->morphToMany(
             $tenantClass,
             'tenantable',                    // morph name (based on tenantable_id / tenantable_type in TenantAssociation)
-            $prefix . 'tenant_associations', // pivot table
+            $prefix.'tenant_associations', // pivot table
             'tenantable_id',                 // FK to your model
             'tenant_id'                      // FK to Tenant
         )
