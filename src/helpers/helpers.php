@@ -108,8 +108,21 @@ if (! function_exists("__response")) {
 if (! function_exists('generate_slug')) {
     function generate_slug($model, $defaultSlug = null)
     {
-        $baseSlug = $defaultSlug ?? Str::limit(Str::slug(get_model_name($model)), 120, '');
-        $slug     = $baseSlug ?? Str::random(10);
+        $providedSlug = $defaultSlug;
+
+        if ($providedSlug === null && method_exists($model, 'getAttribute')) {
+            $providedSlug = $model->getAttribute('slug');
+        }
+
+        if (is_string($providedSlug)) {
+            $providedSlug = trim($providedSlug);
+        }
+
+        $baseSlug = filled($providedSlug)
+            ? $providedSlug
+            : Str::limit(Str::slug(get_model_name($model)), 120, '');
+
+        $slug = $baseSlug !== '' ? $baseSlug : Str::random(10);
 
         $counter    = 1;
         $modelClass = get_class($model);
