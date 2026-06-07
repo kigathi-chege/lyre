@@ -147,12 +147,45 @@ trait BaseModelTrait
     public static function getModelRelationships(int | null $depth = null): array
     {
         $depth = $depth ?? config('lyre.relationship_depth', 1);
-        // $cacheKey = 'model_relationships_' . static::getClassName() . "_depth_$depth";
         $cacheKey = 'model_relationships_' . static::getClassName();
 
-        return cache()->rememberForever($cacheKey, function () use ($depth) {
-            return static::extractModelRelationships(new static(), $depth);
+        $refresh = function () use ($cacheKey, $depth) {
+            $relationships = static::extractModelRelationships(new static(), $depth);
+
+            try {
+                cache()->forever($cacheKey, $relationships);
+            } catch (\Throwable $e) {
+                // If cache storage is unavailable, still return the fresh scan result.
+            }
+
+            return $relationships;
+        };
+
+        $cached = cache()->get($cacheKey);
+
+        if (! is_array($cached)) {
+            return $refresh();
+        }
+
+        $model = new static();
+
+        $isValid = collect($cached)->every(function ($relatedClass, $relationName) use ($model) {
+            if (! is_string($relatedClass) || ! class_exists($relatedClass)) {
+                return false;
+            }
+
+            $rootRelation = str_contains((string) $relationName, '.')
+                ? explode('.', (string) $relationName)[0]
+                : (string) $relationName;
+
+            return method_exists($model, $rootRelation);
         });
+
+        if (! $isValid) {
+            return $refresh();
+        }
+
+        return $cached;
     }
 
     protected static function extractModelRelationships($model, int $depth, string $prefix = ''): array

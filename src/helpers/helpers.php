@@ -239,7 +239,6 @@ if (! function_exists('get_filament_resource_for_model')) {
     function get_filament_resource_for_model(string $modelClass): ?string
     {
         $resources = \Filament\Facades\Filament::getResources(); // Returns all registered resources
-
         foreach ($resources as $resourceClass) {
             if (method_exists($resourceClass, 'getModel') && $resourceClass::getModel() === $modelClass) {
                 return $resourceClass;
@@ -312,15 +311,41 @@ if (! function_exists('get_model_classes')) {
     function get_model_classes($baseNamespace = null)
     {
         $resolver = function ($namespaces) {
+            $cacheKey = is_array($namespaces) ? 'app_model_classes' : "app_model_classes:{$namespaces}";
+            $refresh = function () use ($namespaces, $cacheKey) {
+                $models = scan_for_models($namespaces);
+
+                if (app()->bound('cache')) {
+                    try {
+                        cache()->forever($cacheKey, $models);
+                    } catch (\Throwable $e) {
+                        // Ignore cache write errors and just use the fresh scan result.
+                    }
+                }
+
+                return $models;
+            };
+
             if (!app()->bound('cache')) {
                 return scan_for_models($namespaces);
             }
 
             try {
-                return cache()->rememberForever(
-                    is_array($namespaces) ? 'app_model_classes' : "app_model_classes:{$namespaces}",
-                    fn() => scan_for_models($namespaces)
-                );
+                $cached = cache()->get($cacheKey);
+
+                if (! is_array($cached)) {
+                    return $refresh();
+                }
+
+                $filtered = collect($cached)
+                    ->filter(fn ($class) => is_string($class) && class_exists($class))
+                    ->all();
+
+                if (count($filtered) !== count($cached)) {
+                    return $refresh();
+                }
+
+                return $filtered;
             } catch (\Throwable $e) {
                 return scan_for_models($namespaces);
             }

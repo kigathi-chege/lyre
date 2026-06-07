@@ -761,7 +761,11 @@ class Repository implements RepositoryInterface
             $result = [];
             for ($i = 0; $i < count($parts); $i += 2) {
                 $relationPath = $parts[$i];
-                $value = $parts[$i + 1];
+                $value = $parts[$i + 1] ?? null;
+
+                if ($value === null || $value === '') {
+                    continue;
+                }
 
                 if ($relationPath) {
                     $segments = explode('.', $relationPath);
