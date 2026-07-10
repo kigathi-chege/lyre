@@ -516,13 +516,17 @@ if (! function_exists("keyword_search")) {
     {
         $keyword_formatted = '%' . escape_like($keyword) . '%';
 
-        $query->where(function ($query) use ($keyword_formatted, $columns, $relations) {
+        // PostgreSQL's LIKE is case-sensitive; use ILIKE there so search is
+        // case-insensitive (e.g. mobile keyboards auto-capitalize the first letter).
+        $operator = $query->getModel()->getConnection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
+
+        $query->where(function ($query) use ($keyword_formatted, $columns, $relations, $operator) {
             foreach ($columns as $index => $column) {
                 if (column_exists($query->getModel()->getTable(), $column)) {
                     if ($index === 0) {
-                        $query->where($column, 'LIKE', $keyword_formatted);
+                        $query->where($column, $operator, $keyword_formatted);
                     } else {
-                        $query->orWhere($column, 'LIKE', $keyword_formatted);
+                        $query->orWhere($column, $operator, $keyword_formatted);
                     }
                 }
             }
@@ -547,13 +551,13 @@ if (! function_exists("keyword_search")) {
             // }
 
             foreach ($relations as $relation => $relationColumns) {
-                $query->orWhereHas($relation, function ($query) use ($keyword_formatted, $relationColumns) {
+                $query->orWhereHas($relation, function ($query) use ($keyword_formatted, $relationColumns, $operator) {
                     foreach ($relationColumns as $index => $column) {
                         if (column_exists($query->getModel()->getTable(), $column)) {
                             if ($index === 0) {
-                                $query->where($column, 'LIKE', $keyword_formatted);
+                                $query->where($column, $operator, $keyword_formatted);
                             } else {
-                                $query->orWhere($column, 'LIKE', $keyword_formatted);
+                                $query->orWhere($column, $operator, $keyword_formatted);
                             }
                         }
                     }
