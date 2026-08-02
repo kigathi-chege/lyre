@@ -800,23 +800,118 @@ if (! function_exists('get_response_code')) {
     }
 }
 
+if (! function_exists('model_status_column')) {
+    /**
+     * The status column a model uses (default `status`), honouring a model's STATUS_COLUMN const.
+     */
+    function model_status_column($model): string
+    {
+        return defined(get_class($model) . '::STATUS_COLUMN') ? $model::STATUS_COLUMN : 'status';
+    }
+}
+
+if (! function_exists('enum_column_values')) {
+    /**
+     * The allowed labels of a Postgres ENUM column, or null when the column is not an enum or the
+     * connection is not pgsql (so callers fall through to the next resolution step). Lyre stays
+     * driver-agnostic — this is the only Postgres-specific branch and it degrades to null elsewhere.
+     *
+     * @return array<int, string>|null
+     */
+    function enum_column_values(string $table, string $column): ?array
+    {
+        try {
+            if (DB::connection()->getDriverName() !== 'pgsql') {
+                return null;
+            }
+
+            $rows = DB::select(
+                'select e.enumlabel as value
+                 from pg_type t
+                 join pg_enum e on e.enumtypid = t.oid
+                 join information_schema.columns c on c.udt_name = t.typname
+                 where c.table_name = ? and c.column_name = ?
+                 order by e.enumsortorder',
+                [$table, $column]
+            );
+
+            if (empty($rows)) {
+                return null;
+            }
+
+            return array_map(fn ($row) => $row->value, $rows);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}
+
 if (! function_exists('get_status_code')) {
+    /**
+     * Resolve a status label to the value stored on the model, in canonical order:
+     *   1. No status column on the table  → return the value untouched (never translate/throw).
+     *   2. Column is a (pg) ENUM          → valid iff in the enum's labels; stored verbatim.
+     *   3. Model declares STATUSES        → validate/map against that (list or [label => code]).
+     *   4. Legacy config fallback         → models.{table}.status / STATUS_CONFIG / constant.status.
+     *   5. None of the above yields a set → throw (a genuinely unconfigured status).
+     */
     function get_status_code($status, $model)
     {
-        $configPath = config("models.{$model->getTable()}.status") ?? 'constant.status';
-        $config     = config($configPath);
-        if (! $config) {
-            throw CommonException::fromMessage("Status config not found for model {$model->getTable()}");
+        $table  = $model->getTable();
+        $column = model_status_column($model);
+
+        // 1. No status column → nothing to translate.
+        if (! Schema::hasColumn($table, $column)) {
+            return $status;
         }
-        if (! is_array($config)) {
-            throw CommonException::fromMessage("Status config must be an array");
+
+        // 2. Enum column → the DB is the source of truth.
+        $enum = enum_column_values($table, $column);
+        if ($enum !== null) {
+            if (! in_array($status, $enum, true)) {
+                throw CommonException::fromMessage(
+                    "Status `{$status}` is not valid for {$table}. Allowed: " . implode(', ', $enum)
+                );
+            }
+
+            return $status;
         }
+
+        // 3. Model-declared STATUSES (the canonical declaration for non-enum columns).
+        $declared = defined(get_class($model) . '::STATUSES') ? $model::STATUSES : [];
+        if (! empty($declared)) {
+            return resolve_status_from_config($status, $declared, $table);
+        }
+
+        // 4. Legacy config fallback.
+        $configPath = config("models.{$table}.status")
+            ?? (defined(get_class($model) . '::STATUS_CONFIG') ? $model::STATUS_CONFIG : 'constant.status');
+        $config = config($configPath);
+        if ($config) {
+            if (! is_array($config)) {
+                throw CommonException::fromMessage('Status config must be an array');
+            }
+
+            return resolve_status_from_config($status, $config, $table);
+        }
+
+        // 5. Truly unconfigured.
+        throw CommonException::fromMessage("Status config not found for model {$table}");
+    }
+}
+
+if (! function_exists('resolve_status_from_config')) {
+    /**
+     * Validate/translate a status label against a set: a flat list stores the label verbatim; an
+     * associative [label => code] map returns the code.
+     */
+    function resolve_status_from_config($status, array $config, string $table)
+    {
         if (is_array_associative($config)) {
-            $code = ($config[$status] ?? throw CommonException::fromMessage("Status `{$status}` not found for model {$model->getTable()}"));
-        } else {
-            $code = in_array($status, $config) ? $status : throw CommonException::fromMessage("Status `{$status}` not found for model {$model->getTable()}");
+            return $config[$status] ?? throw CommonException::fromMessage("Status `{$status}` not found for model {$table}");
         }
-        return $code;
+
+        return in_array($status, $config) ? $status : throw CommonException::fromMessage("Status `{$status}` not found for model {$table}");
     }
 }
 

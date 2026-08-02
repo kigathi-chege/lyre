@@ -11,6 +11,22 @@ trait BaseModelTrait
 
     const ID_COLUMN = 'id';
     const NAME_COLUMN = 'name';
+
+    /**
+     * The model's status column (default `status`). A model may override it, mirroring
+     * ID_COLUMN / NAME_COLUMN.
+     */
+    const STATUS_COLUMN = 'status';
+
+    /**
+     * The canonical, model-declared valid statuses. This is the PREFERRED way to declare
+     * statuses. Leave empty to defer to (in order) the column's enum definition, then the
+     * STATUS_CONFIG / models.{table}.status config. A flat list means the labels are stored
+     * verbatim; an associative [label => code] map stores the code.
+     */
+    const STATUSES = [];
+
+    /** Legacy config path for status resolution; used only as a fallback. */
     const STATUS_CONFIG = 'constant.status';
     const ORDER_COLUMN = 'created_at';
     const ORDER_DIRECTION = 'desc';
@@ -59,6 +75,7 @@ trait BaseModelTrait
         $config['order-column'] = static::ORDER_COLUMN;
         $config['order-direction'] = static::ORDER_DIRECTION;
         $config['status'] = static::STATUS_CONFIG;
+        $config['status-column'] = static::STATUS_COLUMN;
         $config['table'] = (new static())->getTable();
         $config['name'] = static::NAME_COLUMN;
         $config['id'] = static::ID_COLUMN;

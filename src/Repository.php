@@ -265,7 +265,7 @@ class Repository implements RepositoryInterface
         if (empty($data)) {
             throw CommonException::fromCode(706);
         }
-        if (isset($data['status'])) {
+        if (isset($data['status']) && Schema::hasColumn($this->model->getTable(), model_status_column($this->model))) {
             $data['status'] = get_status_code($data['status'], $thisModel->first());
         }
         foreach ($thisModel as $model) {
@@ -697,16 +697,21 @@ class Repository implements RepositoryInterface
 
         $query = $originQuery;
 
-        if (array_key_exists('status', $requestQueries) && $requestQueries['status']) {
+        $statusColumn = model_status_column($this->model);
+        $hasStatusColumn = Schema::hasColumn($this->model->getTable(), $statusColumn);
+
+        if (array_key_exists('status', $requestQueries) && $requestQueries['status'] && $hasStatusColumn) {
             $statuses = explode(',', $requestQueries['status']);
-            $query->where(function ($query) use ($statuses) {
-                $query->where($this->model->getTable() . '.status', get_status_code($statuses[0], $this->model));
+            $model = $this->model;
+            $column = $this->model->getTable() . '.' . $statusColumn;
+            $query->where(function ($query) use ($statuses, $model, $column) {
+                $query->where($column, get_status_code($statuses[0], $model));
                 if (count($statuses) > 1) {
                     foreach ($statuses as $key => $status) {
                         if ($key === 0) {
                             continue;
                         } else {
-                            $query->orWhere($this->model->getTable() . '.status', get_status_code($status, $this->model));
+                            $query->orWhere($column, get_status_code($status, $model));
                         }
                     }
                 }
