@@ -1210,6 +1210,18 @@ if (!function_exists('tenant')) {
 if (!function_exists('get_table_foreign_columns')) {
     function get_table_foreign_columns($table, $schema = null)
     {
+        // Resources call this for every serialized record; the schema does not change
+        // within a process, so look each table up once.
+        static $cache = [];
+        $cacheKey = DB::getDefaultConnection() . '|' . ($schema ?? '') . '|' . $table;
+
+        return $cache[$cacheKey] ??= lookup_table_foreign_columns($table, $schema);
+    }
+}
+
+if (!function_exists('lookup_table_foreign_columns')) {
+    function lookup_table_foreign_columns($table, $schema = null)
+    {
         $driver = DB::getDriverName();
 
         if ($driver === 'pgsql') {
