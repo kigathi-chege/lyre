@@ -161,7 +161,8 @@ class Repository implements RepositoryInterface
                 return null;
             }
             throw CommonException::fromMessage(
-                class_basename($this->model) . " not found for arguments: " . json_encode($arguments)
+                class_basename($this->model) . " not found for arguments: " . json_encode($arguments),
+                404
             );
         }
         return $this->resource ? new $this->resource($resource) : $resource;
