@@ -1,3 +1,7 @@
+2.3.1
+
+- Resources look up each table's columns and foreign keys once per process instead of once per serialized record.
+
 2.3.0
 
 - Models can withhold a loaded relation per viewer with canExposeRelation($relation, $user); Resources skip it.

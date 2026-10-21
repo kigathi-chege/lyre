@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class Resource extends JsonResource
@@ -121,7 +122,7 @@ class Resource extends JsonResource
     {
         $custom = $resource->resolveCustomColumns();
         $fillableColumns = $resource->getFillableAttributes();
-        $columnListing = Schema::getColumnListing($resource->getTable());
+        $columnListing = static::tableColumns($resource->getTable());
         $baseColumns = array_merge($fillableColumns, $columnListing, $custom);
 
         $columnsToSet = $resource->getIncluded();
@@ -155,6 +156,20 @@ class Resource extends JsonResource
         ];
 
         return collect($columns);
+    }
+
+    /**
+     * Column names per table, looked up once per process (resources serialize many records
+     * of the same table).
+     *
+     * @return list<string>
+     */
+    protected static function tableColumns(string $table): array
+    {
+        static $cache = [];
+        $cacheKey = DB::getDefaultConnection() . '|' . $table;
+
+        return $cache[$cacheKey] ??= Schema::getColumnListing($table);
     }
 
     public static function columnMeta($resource = null)
