@@ -1,3 +1,8 @@
+2.3.0
+
+- Models can withhold a loaded relation per viewer with canExposeRelation($relation, $user); Resources skip it.
+- Repository::find raises a 404 (not 500) when the record does not exist.
+
 1.1.0
 
 - Update the functionality of RelationFilter to support multiple columns from a single relation (relation_in).
