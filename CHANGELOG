@@ -1,3 +1,9 @@
+2.4.0
+
+- Typo-tolerant list search: `?search=...&fuzzy=true` ranks exact, prefix and substring matches first, then pg_trgm similarity (Postgres; falls back to substring without the extension).
+- `POST /{resource}/resolve` (`Controller::resolve`) finds or creates a record by normalised name, with near-duplicate suggestions and an advisory lock against concurrent duplicates. Models opt in with `ResolvesByName`.
+- Helpers `normalize_name`, `name_similarity`, `trigram_search_available`; config `lyre.search.*`.
+
 2.3.1
 
 - Resources look up each table's columns and foreign keys once per process instead of once per serialized record.

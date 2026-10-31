@@ -192,11 +192,22 @@ Lyre provides the following query string filters to filter all your data the way
 - **order** - Returns ordered items, e.g. `/subjects?order=name,asc`
 - **relation** - Filter by a column in a related table, i.e. `/subjects?relation=courses,english` returns only the Subjects that belong to an English course
 - **search** - Search through all columns for a string match, e.g. `/subjects?search=physics`
+- **fuzzy** - With `search`, also match near-misses (`/subjects?search=whatsaap&fuzzy=true` finds `WhatsApp`), best matches first. Needs Postgres `pg_trgm` (`CREATE EXTENSION pg_trgm`); without it the search stays a plain substring match. Tune with `lyre.search.fuzzy_threshold`.
 - **startswith** - Get all rows whose `NAME_COLUMN` startswith substring, e.g. `/subjects?startswith=b`
 - **withcount** - Get the count of a relationship, e.g. `/subjects?withcount=tasks` returns with a `tasks_count` field containing the number of tasks for each subject.
 - **wherenull** - Provide comma separated columns whose value should be `NULL`
 - **doesnthave** - Provide comma separated relations that must be empty
 - **limit / offset / random / first** - Fine tune record counts and ordering without writing SQL
+
+### Find or create by name
+
+Pickers that let users create a missing option should call `POST /{resource}/resolve` (register the route to the controller's `resolve` action) instead of `store`. It reuses the existing record when the normalised name (case, accents and punctuation ignored) already exists, answers `409` with `result.suggestions` when near-duplicates exist (resend with `confirm_new=true` to create anyway), and otherwise creates the record like `store`. The caller needs the model's `create` permission.
+
+Opt a model in with `Lyre\Traits\ResolvesByName` and override what you need:
+
+- `resolveNameColumn()` - the name column (default `name`)
+- `resolutionScope($query, $input)` - what the name must be unique within (default: the whole table)
+- `afterResolve($model, $input, $created)` - e.g. link an existing record to the new parent when `$created` is false
 
 ### Further Reading
 

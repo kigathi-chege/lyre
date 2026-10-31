@@ -475,10 +475,36 @@ class Repository implements RepositoryInterface
                 }
 
                 $serializableColumns = $this->resource::serializableColumns($this->model)->values()->toArray();
-                $query = keyword_search($query, $search, $serializableColumns, $relations);
+                $fuzzy = ! empty($this->searchQuery['fuzzy']);
+                $query = keyword_search($query, $search, $serializableColumns, $relations, $fuzzy);
+
+                if ($fuzzy && trigram_search_available($this->model->getConnection())) {
+                    $query = $this->rankFuzzyMatches($query, $search, $serializableColumns);
+                }
             }
         }
         return $query;
+    }
+
+    /**
+     * Best matches first: exact, then prefix, then substring, then by trigram similarity.
+     * Applied before any other ordering so the closest name wins the top of the list.
+     */
+    protected function rankFuzzyMatches($query, string $search, array $columns)
+    {
+        $table = $this->model->getTable();
+        $column = collect($columns)->first(fn ($column) => column_exists($table, $column));
+        if (! $column) {
+            return $query;
+        }
+
+        $wrapped = $query->getQuery()->getGrammar()->wrap($table . '.' . $column);
+        $escaped = escape_like($search);
+
+        return $query->orderByRaw(
+            "case when lower({$wrapped}::text) = lower(?) then 0 when {$wrapped}::text ilike ? then 1 when {$wrapped}::text ilike ? then 2 else 3 end, word_similarity(?, {$wrapped}::text) desc",
+            [$search, $escaped . '%', '%' . $escaped . '%', $search]
+        );
     }
 
     public function order($query)
@@ -729,6 +755,7 @@ class Repository implements RepositoryInterface
 
         if (array_key_exists('search', $requestQueries) && $requestQueries['search']) {
             $result['search'] = $requestQueries['search'];
+            $result['fuzzy'] = filter_var($requestQueries['fuzzy'] ?? false, FILTER_VALIDATE_BOOLEAN);
             if (array_key_exists('search-relations', $requestQueries) && $requestQueries['search-relations']) {
                 $parts = explode(",", $requestQueries['search-relations']);
                 $preliminaryResult = [];

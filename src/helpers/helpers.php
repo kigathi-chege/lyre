@@ -511,8 +511,82 @@ if (! function_exists("escape_like")) {
     }
 }
 
+if (! function_exists("normalize_name")) {
+    /**
+     * Canonical form of a human-entered name, used for duplicate detection:
+     * case-folded, accent-folded, punctuation collapsed to single spaces.
+     * "  Sciénce " and "science" normalise to the same string. `+` and `#` are kept
+     * so "C++" and "C#" stay distinct from "C".
+     */
+    function normalize_name(?string $value): string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (class_exists(\Transliterator::class)) {
+            $folded = \Transliterator::create('NFD; [:Nonspacing Mark:] Remove; NFC')?->transliterate($value);
+            $value = $folded !== false && $folded !== null ? $folded : $value;
+        }
+
+        $value = mb_strtolower($value);
+        $value = preg_replace('/[^\p{L}\p{N}+#]+/u', ' ', $value) ?? $value;
+
+        return trim($value);
+    }
+}
+
+if (! function_exists("name_similarity")) {
+    /**
+     * 0..1 similarity between two names after normalisation (1 = identical).
+     * Pure PHP so it works on any database; used to rank/flag near-duplicates.
+     */
+    function name_similarity(string $a, string $b): float
+    {
+        $a = normalize_name($a);
+        $b = normalize_name($b);
+
+        if ($a === '' || $b === '') {
+            return 0.0;
+        }
+        if ($a === $b) {
+            return 1.0;
+        }
+
+        $longest = max(mb_strlen($a), mb_strlen($b));
+        // levenshtein() is byte-based; the strings are accent-folded so this is accurate for Latin names.
+        $distance = levenshtein(substr($a, 0, 255), substr($b, 0, 255));
+
+        return max(0.0, 1 - ($distance / min($longest, 255)));
+    }
+}
+
+if (! function_exists("trigram_search_available")) {
+    /**
+     * Whether Postgres' pg_trgm extension is installed on the model's connection.
+     * Cached per connection for the process; fuzzy search degrades to substring search without it.
+     */
+    function trigram_search_available($connection): bool
+    {
+        static $cache = [];
+
+        $name = $connection->getName();
+        if (! array_key_exists($name, $cache)) {
+            try {
+                $cache[$name] = $connection->getDriverName() === 'pgsql'
+                    && $connection->selectOne("select 1 as present from pg_extension where extname = 'pg_trgm'") !== null;
+            } catch (\Throwable $e) {
+                $cache[$name] = false;
+            }
+        }
+
+        return $cache[$name];
+    }
+}
+
 if (! function_exists("keyword_search")) {
-    function keyword_search($query, $keyword, $columns, $relations = [])
+    function keyword_search($query, $keyword, $columns, $relations = [], bool $fuzzy = false)
     {
         $keyword_formatted = '%' . escape_like($keyword) . '%';
 
@@ -520,13 +594,22 @@ if (! function_exists("keyword_search")) {
         // case-insensitive (e.g. mobile keyboards auto-capitalize the first letter).
         $operator = $query->getModel()->getConnection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
 
-        $query->where(function ($query) use ($keyword_formatted, $columns, $relations, $operator) {
-            foreach ($columns as $index => $column) {
+        // Opt-in typo tolerance ("whatsaap" finds "WhatsApp") via pg_trgm word similarity,
+        // on top of the substring match. Falls back to plain substring search without the extension.
+        $fuzzy = $fuzzy && trigram_search_available($query->getModel()->getConnection());
+        $threshold = (float) config('lyre.search.fuzzy_threshold', 0.3);
+
+        $query->where(function ($query) use ($keyword, $keyword_formatted, $columns, $relations, $operator, $fuzzy, $threshold) {
+            $first = true;
+            foreach ($columns as $column) {
                 if (column_exists($query->getModel()->getTable(), $column)) {
-                    if ($index === 0) {
-                        $query->where($column, $operator, $keyword_formatted);
-                    } else {
-                        $query->orWhere($column, $operator, $keyword_formatted);
+                    $method = $first ? 'where' : 'orWhere';
+                    $first = false;
+                    $query->{$method}($column, $operator, $keyword_formatted);
+
+                    if ($fuzzy) {
+                        $wrapped = $query->getQuery()->getGrammar()->wrap($query->getModel()->getTable() . '.' . $column);
+                        $query->orWhereRaw("word_similarity(?, {$wrapped}::text) >= ?", [$keyword, $threshold]);
                     }
                 }
             }
