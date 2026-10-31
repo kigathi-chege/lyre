@@ -26,6 +26,20 @@ return [
     'per-page' => 9,
 
     /**
+     * Search tuning.
+     *
+     * fuzzy_threshold: minimum pg_trgm word_similarity (0-1) for a typo-tolerant match,
+     * used only when a list request opts in with `?fuzzy=true` and pg_trgm is installed.
+     *
+     * similar_threshold: minimum normalised-name similarity (0-1) at which the
+     * find-or-create endpoint reports an existing record as a likely duplicate.
+     */
+    'search' => [
+        'fuzzy_threshold' => 0.3,
+        'similar_threshold' => 0.75,
+    ],
+
+    /**
      * Default status configuration path
      */
     'status-config' => 'constant.status',

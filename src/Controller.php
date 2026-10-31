@@ -7,11 +7,13 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Pluralizer;
 use Illuminate\Support\Str;
 use Lyre\Request as BaseRequest;
+use Lyre\Services\NameResolver;
 use Lyre\Traits\BaseControllerTrait;
 
 class Controller extends BaseController
@@ -90,6 +92,91 @@ class Controller extends BaseController
             $this->modelRepository->create($validatedData),
             get_response_code("create-{$this->modelName}")
         );
+    }
+
+    /**
+     * Duplicate-safe find-or-create by name. Reuses the existing record when the
+     * normalised name already exists in scope, asks for confirmation when near
+     * matches exist (HTTP 409 with `suggestions`; resend with `confirm_new=true`
+     * to create anyway), and otherwise creates the record as `store` would.
+     * Requires the model to use Lyre\Traits\ResolvesByName for its scope/link hooks.
+     */
+    public function resolve(BaseRequest $request)
+    {
+        $this->authorize('create', $this->modelConfig['model']);
+
+        $validatedData = $this->validateData($request);
+        $column = method_exists($this->modelInstance, 'resolveNameColumn') ? $this->modelInstance->resolveNameColumn() : 'name';
+        $name = trim((string) ($validatedData[$column] ?? ''));
+
+        if (normalize_name($name) === '') {
+            return __response(false, "A {$this->modelName} name is required", null, 422);
+        }
+
+        // Serialise concurrent resolves of the same name so two requests can't both
+        // conclude "missing" and each create the record.
+        return DB::transaction(function () use ($request, $validatedData, $name) {
+            $connection = DB::connection($this->modelInstance->getConnectionName());
+            if ($connection->getDriverName() === 'pgsql') {
+                $connection->select(
+                    'select pg_advisory_xact_lock(hashtext(?))',
+                    [$this->modelInstance->getTable() . ':' . normalize_name($name)]
+                );
+            }
+
+            $result = (new NameResolver($this->modelInstance))->lookup($name, $validatedData);
+
+            if ($result['outcome'] === NameResolver::EXISTING) {
+                $this->afterResolve($result['match'], $validatedData, false);
+
+                return __response(
+                    true,
+                    "Existing {$this->modelName} found",
+                    $this->wrapResolved($result['match']),
+                    200,
+                    false,
+                    ['existing' => true]
+                );
+            }
+
+            if ($result['outcome'] === NameResolver::SIMILAR && ! $request->boolean('confirm_new')) {
+                return __response(
+                    false,
+                    "Similar {$this->modelNamePlural} already exist",
+                    ['suggestions' => $result['similar']->map(fn (array $row) => [
+                        'item' => $this->wrapResolved($row['model']),
+                        'similarity' => round($row['similarity'], 2),
+                    ])->all()],
+                    409
+                );
+            }
+
+            $created = $this->modelRepository->create($validatedData);
+            $this->afterResolve($created->resource ?? $created, $validatedData, true);
+
+            return __response(
+                true,
+                "Create {$this->modelNamePlural}",
+                $created,
+                get_response_code("create-{$this->modelName}"),
+                false,
+                ['existing' => false]
+            );
+        });
+    }
+
+    protected function afterResolve($model, array $input, bool $created): void
+    {
+        if (method_exists($this->modelInstance, 'afterResolve')) {
+            $this->modelInstance->afterResolve($model, $input, $created);
+        }
+    }
+
+    protected function wrapResolved($model)
+    {
+        $resource = $this->modelRepository->getResource();
+
+        return $resource ? new $resource($model) : $model;
     }
 
     public function show(Request $request, $slug, $scope = null)
